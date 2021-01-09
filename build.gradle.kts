@@ -12,6 +12,7 @@ repositories {
 val quarkusPlatformGroupId: String by project
 val quarkusPlatformArtifactId: String by project
 val quarkusPlatformVersion: String by project
+val quarkusAdocPoTranslatorVersion: String by project
 
 dependencies {
     implementation(enforcedPlatform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}"))
@@ -33,7 +34,7 @@ dependencies {
 }
 
 group = "net.sharplab.translator"
-version = "0.5.0-SNAPSHOT"
+version = "${quarkusAdocPoTranslatorVersion}"
 
 java {
     sourceCompatibility = JavaVersion.VERSION_11
