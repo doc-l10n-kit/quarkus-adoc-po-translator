@@ -7,6 +7,7 @@ import net.sharplab.translator.core.model.PoMessage
 import org.asciidoctor.jruby.internal.JRubyAsciidoctor
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
+import org.jsoup.nodes.Node
 import org.jsoup.nodes.TextNode
 import javax.enterprise.context.Dependent
 
@@ -14,25 +15,43 @@ import javax.enterprise.context.Dependent
 class PoTranslatorServiceImpl(private val translator: Translator) : PoTranslatorService {
 
     private val asciidoctor = JRubyAsciidoctor()
-    private val space = " "
 
     override fun translate(poFile: PoFile, srcLang: String, dstLang: String): PoFile {
         val messages = poFile.messages
-        val targetMessages = messages.filter(this::requiresTranslation)
-        val targetMessageStrings = targetMessages.map { message -> message.messageId }.map { preProcess(it) }
-        val translatedStrings = translator.translate(targetMessageStrings, srcLang, dstLang).map { postProcess(it) }
-        translatedStrings.forEachIndexed { index, item -> targetMessages[index].also { it.messageString = item; } }
+        val translationTargets = messages.filter{ requiresTranslation(it)}
 
-        messages.filter(this::isHeader).filter { it.messageString.isEmpty() }.forEach{ translateHeader(it, srcLang, dstLang)}
+        val blogHeaderMessages = translationTargets.filter { isBlogHeader(it) }
+        val nonBlogHeaderMessages = translationTargets.filterNot { isBlogHeader(it) }
+
+        translateBlogHeaders(blogHeaderMessages, srcLang, dstLang)
+        translateMessages(nonBlogHeaderMessages, srcLang, dstLang)
 
         return PoFile(messages)
     }
 
-    private fun translateHeader(message: PoMessage, srcLang: String, dstLang: String){
-        message.messageString = translateHeader(message.messageId, srcLang, dstLang)
+    fun translate(messages: List<String>, srcLang: String, dstLang: String): List<String> {
+        val preProcessedMessages = messages.map { preProcess(it) }
+        val processedMessages = translator.translate(preProcessedMessages, srcLang, dstLang)
+        return processedMessages.map { postProcess(it) }
     }
 
-    internal fun translateHeader(message: String, srcLang: String, dstLang: String): String{
+    fun translate(message: String, srcLang: String, dstLang: String): String {
+        return translate(listOf(message), srcLang, dstLang).first()
+    }
+
+    private fun translateMessages(messages: List<PoMessage>, srcLang: String, dstLang: String){
+        val translatedStrings = translate(messages.map { it.messageId }, srcLang, dstLang)
+        translatedStrings.forEachIndexed { index, item -> messages[index].also { it.messageString = item; it.fuzzy = true } }
+    }
+
+    private fun translateBlogHeaders(messages: List<PoMessage>, srcLang: String, dstLang: String){
+        messages.forEach { message ->
+            message.messageString = translateBlogHeader(message.messageId, srcLang, dstLang)
+            message.fuzzy = true
+        }
+    }
+
+    private fun translateBlogHeader(message: String, srcLang: String, dstLang: String): String{
         val titleRegex = Regex("""^(title:)(.*)\n""", RegexOption.MULTILINE)
         val synopsisRegex = Regex("""^(synopsis:)(.*)\n""", RegexOption.MULTILINE)
         val title = titleRegex.find(message)!!.groupValues[2].trim()
@@ -50,9 +69,6 @@ class PoTranslatorServiceImpl(private val translator: Translator) : PoTranslator
         if(message.messageString.isNotEmpty()){
             return false
         }
-        if(isHeader(message)){
-            return false
-        }
         return when(message.type){
             MessageType.DelimitedBlock -> false
             MessageType.TargetForMacroImage -> false
@@ -60,7 +76,7 @@ class PoTranslatorServiceImpl(private val translator: Translator) : PoTranslator
         }
     }
 
-    private fun isHeader(message: PoMessage): Boolean {
+    private fun isBlogHeader(message: PoMessage): Boolean {
         val lines = message.messageId.lines()
         return  lines.any { line -> line.startsWith("layout:") } &&
                 lines.any { line -> line.startsWith("title:") } &&
@@ -80,12 +96,12 @@ class PoTranslatorServiceImpl(private val translator: Translator) : PoTranslator
 
     internal fun postProcess(messageString: String): String {
         val doc = Jsoup.parseBodyFragment(messageString)
-        replaceToQuote(doc.body(), "em", " _", "_ ")
-        replaceToQuote(doc.body(), "strong", " *", "* ")
-        replaceToQuote(doc.body(), "code", " `", "` ")
-        replaceToQuote(doc.body(), "monospace", " `", "` ")
-        replaceToQuote(doc.body(), "superscript", " ^", "^ ")
-        replaceToQuote(doc.body(), "subscript", " ~", "~ ")
+        replaceToQuote(doc.body(), "em", "_", "_")
+        replaceToQuote(doc.body(), "strong", "*", "*")
+        replaceToQuote(doc.body(), "code", "`", "`")
+        replaceToQuote(doc.body(), "monospace", "`", "`")
+        replaceToQuote(doc.body(), "superscript", "^", "^")
+        replaceToQuote(doc.body(), "subscript", "~", "~")
         replaceLink(doc.body())
         return doc.body().html()
     }
@@ -105,7 +121,7 @@ class PoTranslatorServiceImpl(private val translator: Translator) : PoTranslator
                 for (attr in attrs) {
                     attrsText += ", %s=%s".format(mapAttrKey(attr.key), attr.value)
                 }
-                val linkText = " %s[%s%s]".format(url, text, attrsText)
+                val linkText = " link:%s[%s%s]".format(url, text, attrsText)
                 element.replaceWith(TextNode(linkText))
             }
         }
@@ -122,12 +138,27 @@ class PoTranslatorServiceImpl(private val translator: Translator) : PoTranslator
 
     private fun replaceToQuote(element: Element, tagName: String, openQuote: String, closeQuote: String){
         if(element.tagName() == tagName){
-            val quotedString = openQuote + element.html() + closeQuote
+            var isSpaced = false
+            val prev =element.previousSibling()
+            if(prev is TextNode){
+                if(prev.text().endsWith(SPACE)){
+                    isSpaced = true
+                }
+            }
+            val quotedString = if(isSpaced){
+                openQuote + element.html() + closeQuote
+            } else{
+                SPACE + openQuote + element.html() + closeQuote
+            }
             element.replaceWith(TextNode(quotedString))
         }
         element.children().forEach{
             replaceToQuote(it, tagName, openQuote, closeQuote)
         }
+    }
+
+    companion object {
+        private val SPACE = " "
     }
 
 }

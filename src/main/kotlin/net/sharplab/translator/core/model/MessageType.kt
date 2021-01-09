@@ -10,5 +10,6 @@ enum class MessageType {
     DelimitedBlock3,
     DelimitedBlock,
     TargetForMacroImage,
+    Table,
     None
 }

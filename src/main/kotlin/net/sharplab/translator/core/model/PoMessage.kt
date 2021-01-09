@@ -22,6 +22,7 @@ class PoMessage{
                 checkMessageType("type: delimited block ==") -> MessageType.DelimitedBlock2
                 checkMessageType("type: delimited block ===") -> MessageType.DelimitedBlock3
                 checkMessageType("type: delimited block -") -> MessageType.DelimitedBlock
+                checkMessageType("type: Table") -> MessageType.Table
                 checkMessageType("type: Target for macro image") -> MessageType.TargetForMacroImage
                 else -> MessageType.None
             }
@@ -34,6 +35,12 @@ class PoMessage{
         get() = message.msgstr
         set(value){
             message.msgstr = value
+        }
+
+    var fuzzy: Boolean
+        get() = message.isFuzzy
+        set(value){
+            message.isFuzzy = value
         }
 
     private fun checkMessageType(type: String): Boolean {
