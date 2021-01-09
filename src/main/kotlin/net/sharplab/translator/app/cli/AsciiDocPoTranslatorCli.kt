@@ -9,8 +9,8 @@ import java.lang.IllegalArgumentException
 @CommandLine.Command
 class AsciiDocPoTranslatorCli(private val asciiDocPoTranslatorAppService: AsciiDocPoTranslatorAppService, private val asciiDocPoTranslatorSetting: AsciiDocPoTranslatorSetting) : Runnable {
 
-    @CommandLine.Option(order = 0, names = ["--path"], description = ["file path"], required = true)
-    private var path: File? = null
+    @CommandLine.Parameters(description = ["file path"])
+    private var path: List<File>? = null
     @CommandLine.Option(order = 2, names = ["--srcLang"], description = ["source language"])
     private var srcLang: String? = null
     @CommandLine.Option(order = 3, names = ["--dstLang"], description = ["destination language"])
@@ -22,7 +22,9 @@ class AsciiDocPoTranslatorCli(private val asciiDocPoTranslatorAppService: AsciiD
         val filePath = path?: throw IllegalArgumentException("path must be provided")
         val resolvedSrcLang = srcLang ?: asciiDocPoTranslatorSetting.defaultSrcLang ?: throw IllegalArgumentException("srcLang must be provided")
         val resolvedDstLang = dstLang ?: asciiDocPoTranslatorSetting.defaultDstLang ?: throw IllegalArgumentException("dstLang must be provided")
-        asciiDocPoTranslatorAppService.translateAsciiDocPoFile(filePath, resolvedSrcLang, resolvedDstLang)
+        filePath.forEach {
+            asciiDocPoTranslatorAppService.translateAsciiDocPoFile(it, resolvedSrcLang, resolvedDstLang)
+        }
     }
 
 }

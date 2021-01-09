@@ -26,20 +26,6 @@ The application can be packaged using following command:
 
 It produces the `quarkus-adoc-po-translator-runner.jar` file in the `build` directory.
 
-### Creating a native executable
-
-You can also create a native executable in this way:
-```
- ./gradlew build -Dquarkus.package.type=native
-```
-
-Or, if you don't have GraalVM installed, you can run the native executable build in a container using following command:
-```
-./gradlew build -Dquarkus.package.type=native -Dquarkus.native.container-build=true
-```
-
-It produces the `quarkus-adoc-po-translator-runner` file in the `build` directory.
-
 ## Configuration
 
 place application.yml to `<quarkus-adoc-po-translator working directory>/config/application.yml`
@@ -60,13 +46,6 @@ translator:
 uber-jar
 
 ```
-java -jar quarkus-adoc-po-translator.jar --path <path to source po file> \
-[--srcLang <source language>] [--dstLang <destination language>]
-```
-
-executable
-
-```
-./quarkus-adoc-po-translator-runner --path <path to source epub file> \
+java -jar quarkus-adoc-po-translator.jar [<path to source po file>...] \
 [--srcLang <source language>] [--dstLang <destination language>]
 ```
