@@ -1,10 +1,12 @@
 package net.sharplab.translator.core.service
 
+import net.sharplab.translator.app.service.AsciiDocPoTranslatorAppServiceImpl
 import net.sharplab.translator.core.driver.translator.Translator
 import net.sharplab.translator.core.model.MessageType
 import net.sharplab.translator.core.model.PoFile
 import net.sharplab.translator.core.model.PoMessage
 import org.asciidoctor.jruby.internal.JRubyAsciidoctor
+import org.jboss.logging.Logger
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
 import org.jsoup.nodes.Node
@@ -13,6 +15,8 @@ import javax.enterprise.context.Dependent
 
 @Dependent
 class PoTranslatorServiceImpl(private val translator: Translator) : PoTranslatorService {
+
+    private val logger = Logger.getLogger(PoTranslatorServiceImpl::class.java)
 
     private val asciidoctor = JRubyAsciidoctor()
 
@@ -91,7 +95,11 @@ class PoTranslatorServiceImpl(private val translator: Translator) : PoTranslator
         val asciidoc = asciidoctor.load(messageString, options)
         val html = asciidoc.convert()
         val doc = Jsoup.parseBodyFragment(html)
-        return doc.body().children().first().children().html()
+        val first = doc.body().children().first()
+        return when (first) {
+            null -> ""
+            else -> first.children().html()
+        }
     }
 
     internal fun postProcess(messageString: String): String {

@@ -7,10 +7,8 @@ import java.io.File
 
 class PoReader {
 
-    private val poParser = PoParser()
-
     fun read(file: File): PoFile {
-
+        val poParser = PoParser()
         val catalog = poParser.parseCatalog(file)
         val messages = catalog.map {item -> PoMessage(item) }
         return PoFile(messages)
