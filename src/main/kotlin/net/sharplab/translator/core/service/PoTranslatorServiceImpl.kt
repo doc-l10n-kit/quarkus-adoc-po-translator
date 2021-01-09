@@ -103,7 +103,19 @@ class PoTranslatorServiceImpl(private val translator: Translator) : PoTranslator
         replaceToQuote(doc.body(), "superscript", "^", "^")
         replaceToQuote(doc.body(), "subscript", "~", "~")
         replaceLink(doc.body())
+        replaceImage(doc.body())
         return doc.body().html()
+    }
+
+    private fun replaceImage(element: Element) {
+        if(element.tagName() == "span" && element.classNames().contains("image")){
+            val imgTag = element.selectFirst("img")
+            val src = imgTag.attr("src")
+            val alt = imgTag.attr("alt")
+            val imageText = " image:%s[alt=%s]".format(src, alt)
+            element.replaceWith(TextNode(imageText))
+        }
+        element.children().forEach(this::replaceImage)
     }
 
     private fun replaceLink(element: Element) {
