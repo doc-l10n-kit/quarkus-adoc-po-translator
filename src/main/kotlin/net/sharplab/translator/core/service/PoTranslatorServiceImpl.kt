@@ -39,13 +39,17 @@ class PoTranslatorServiceImpl(private val translator: Translator) : PoTranslator
         return processedMessages.map { postProcess(it) }
     }
 
-    fun translate(message: String, srcLang: String, dstLang: String): String {
-        return translate(listOf(message), srcLang, dstLang).first()
-    }
-
     private fun translateMessages(messages: List<PoMessage>, srcLang: String, dstLang: String){
         val translatedStrings = translate(messages.map { it.messageId }, srcLang, dstLang)
-        translatedStrings.forEachIndexed { index, item -> messages[index].also { it.messageString = item; it.fuzzy = true } }
+        translatedStrings.forEachIndexed { index, item -> messages[index].also {
+            if(item.isNotEmpty()){
+                it.messageString = item
+            }
+            else{
+                it.messageString = it.messageId
+            }
+            it.fuzzy = true
+        } }
     }
 
     private fun translateBlogHeaders(messages: List<PoMessage>, srcLang: String, dstLang: String){
@@ -58,14 +62,26 @@ class PoTranslatorServiceImpl(private val translator: Translator) : PoTranslator
     private fun translateBlogHeader(message: String, srcLang: String, dstLang: String): String{
         val titleRegex = Regex("""^(title:)(.*)\n""", RegexOption.MULTILINE)
         val synopsisRegex = Regex("""^(synopsis:)(.*)\n""", RegexOption.MULTILINE)
-        val title = titleRegex.find(message)!!.groupValues[2].trim()
-        val synopsis = synopsisRegex.find(message)!!.groupValues[2].trim()
+        val titleFindResult = titleRegex.find(message)
+        val synopsisFindResult = synopsisRegex.find(message)
+        var title = ""
+        var synopsis = ""
+        if(titleFindResult!=null){
+            title = titleFindResult.groupValues[2].trim()
+        }
+        if(synopsisFindResult!=null){
+            synopsis = synopsisFindResult.groupValues[2].trim()
+        }
         val translated = translator.translate(listOf(title, synopsis), srcLang, dstLang)
         val titleTranslated = translated[0]
         val synopsisTranslated = translated[1]
         var replaced = message
-        replaced = titleRegex.replace(replaced, "title: %s\n".format(titleTranslated))
-        replaced = synopsisRegex.replace(replaced, "synopsis: %s\n".format(synopsisTranslated))
+        if(titleFindResult!=null){
+            replaced = titleRegex.replace(replaced, "title: %s\n".format(titleTranslated))
+        }
+        if(synopsisFindResult!=null){
+            replaced = synopsisRegex.replace(replaced, "synopsis: %s\n".format(synopsisTranslated))
+        }
         return replaced
     }
 
