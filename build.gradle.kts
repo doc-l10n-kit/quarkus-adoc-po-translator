@@ -24,6 +24,7 @@ dependencies {
     implementation("io.quarkus:quarkus-arc")
     implementation("io.quarkus:quarkus-resteasy")
 
+    implementation("com.squareup.okhttp3:okhttp")
     implementation("org.fedorahosted.tennera:jgettext:0.15.1")
     implementation("org.asciidoctor:asciidoctorj:2.4.2")
     implementation("org.jsoup:jsoup:1.13.1")

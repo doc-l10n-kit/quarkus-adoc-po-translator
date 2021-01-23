@@ -1,6 +1,11 @@
 translator:
+  engine: deepL
   deepL:
-    apiKey: <put your api key here>
+    apiKey: <put your DeepL api key here>
+  msTranslator:
+    subscriptionKey: <put your MS Translator subscription key>
+    location: <put your Azure Cognitive Services location>
+    category: <put your MS Custom Translator category ID>
   language:
     source: en        # default source language
     destination: ja   # default destination language
