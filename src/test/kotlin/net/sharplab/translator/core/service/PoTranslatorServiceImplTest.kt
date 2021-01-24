@@ -25,15 +25,4 @@ internal class PoTranslatorServiceImplTest{
 //        assertThat(result).isNotNull();
 //    }
 
-    @Test
-    fun preProcess_test(){
-        val messageString = poTranslatorServiceImplTest.preProcess("This is a link:https://github.com/webauthn4j[link], to _webauthn4j_ GitHub org.")
-        assertThat(messageString).isEqualTo("This is a <a href=\"https://github.com/webauthn4j\">link</a>, to <em>webauthn4j</em> GitHub org.")
-    }
-
-    @Test
-    fun postProcess_test(){
-        val messageString = poTranslatorServiceImplTest.postProcess("これは、<em>webauthn4j</em>GitHub組織への<a href=\"https://github.com/webauthn4j\" window=\"_blank\">リンク</a>です。")
-        assertThat(messageString).isEqualTo("これは、 _webauthn4j_ GitHub組織への https://github.com/webauthn4j[リンク, window=\"_blank\"]です。")
-    }
 }

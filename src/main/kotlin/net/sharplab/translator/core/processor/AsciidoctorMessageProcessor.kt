@@ -30,7 +30,7 @@ class AsciidoctorMessageProcessor {
         DecorationTagPostProcessor("subscript", "~", "~").postProcess(body)
         LinkTagPostProcessor().postProcess(body)
         ImageTagPostProcessor().postProcess(body)
-        return doc.body().html()
+        return body.text()
     }
 
 }

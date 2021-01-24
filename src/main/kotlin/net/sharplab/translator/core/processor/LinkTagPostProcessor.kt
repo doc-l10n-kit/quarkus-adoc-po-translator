@@ -1,9 +1,12 @@
 package net.sharplab.translator.core.processor
 
+import org.jboss.logging.Logger
 import org.jsoup.nodes.Element
 import org.jsoup.nodes.TextNode
 
 class LinkTagPostProcessor : TagPostProcessor{
+
+    private val logger = Logger.getLogger(LinkTagPostProcessor::class.java)
 
     override fun postProcess(message: Element) {
         replaceLink(message)
@@ -22,9 +25,21 @@ class LinkTagPostProcessor : TagPostProcessor{
                 var attrsText = ""
                 val attrs = element.attributes().filter { attr -> attr.key != "href" }.filterNot { attr -> attr.key == "rel" && attr.value == "noopener" }
                 for (attr in attrs) {
-                    attrsText += ", %s=%s".format(mapAttrKey(attr.key), attr.value)
+                    attrsText += ", %s=\"%s\"".format(mapAttrKey(attr.key), attr.value)
                 }
-                val linkText = " link:%s[%s%s]".format(url, text, attrsText)
+                var linkText = "link:%s[%s%s]".format(url, text, attrsText)
+
+                val prev =element.previousSibling()
+                val next =element.nextSibling()
+                val isPrevNonSpacedTextNode= prev is TextNode && !prev.text().endsWith(" ")
+                val isNextNonSpacedTextNode= next is TextNode && !next.text().startsWith(" ")
+
+                if(isPrevNonSpacedTextNode){
+                    linkText = " $linkText"
+                }
+                if(isNextNonSpacedTextNode){
+                    linkText = "$linkText "
+                }
                 element.replaceWith(TextNode(linkText))
             }
         }

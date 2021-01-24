@@ -23,6 +23,14 @@ class MSTranslator(private val subscriptionKey: String, private val location: St
     }
 
     override fun translate(texts: List<String>, srcLang: String, dstLang: String): List<String> {
+        val subLists = texts.withIndex().groupBy { it.index / 20 };
+        return subLists.map{
+            val subList = it.value.map { item -> item.value }
+            doTranslate(subList, srcLang, dstLang)
+        }.flatten()
+    }
+
+    private fun doTranslate(texts: List<String>, srcLang: String, dstLang: String): List<String> {
 
         val url = HttpUrl.Builder()
                 .scheme("https")

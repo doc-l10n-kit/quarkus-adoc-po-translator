@@ -11,7 +11,7 @@ class PoWriter {
         FileOutputStream(filePath).use {
             val poWriter = PoWriter()
             val catalog = Catalog()
-            poFile.messages.forEach { catalog.addMessage(it.message) }
+            poFile.messages.forEach { item -> catalog.addMessage(item.message) }
             poWriter.write(catalog, it)
         }
     }
