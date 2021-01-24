@@ -11,17 +11,20 @@ class DecorationTagPostProcessor(private val tagName: String, private val openQu
 
     private fun replaceToQuote(element: Element){
         if(element.tagName() == tagName){
-            var isSpaced = false
             val prev =element.previousSibling()
-            if(prev is TextNode && prev.text().endsWith(" ")) {
-                isSpaced = true
+            val next =element.nextSibling()
+            val isPrevSpaced= prev is TextNode && prev.text().endsWith(" ")
+            val isNextSpaced= next is TextNode && next.text().startsWith(" ")
+
+            val openStr = when {
+                isPrevSpaced -> openQuote
+                else -> " $openQuote"
             }
-            val quotedString = if(isSpaced){
-                openQuote + element.html() + closeQuote
-            } else{
-                " " + openQuote + element.html() + closeQuote
+            val closeStr = when {
+                isNextSpaced -> closeQuote
+                else -> "$closeQuote "
             }
-            element.replaceWith(TextNode(quotedString))
+            element.replaceWith(TextNode(openStr + element.html() + closeStr))
         }
         element.children().forEach{
             replaceToQuote(it)

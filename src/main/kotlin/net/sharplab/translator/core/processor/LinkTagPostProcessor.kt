@@ -24,7 +24,19 @@ class LinkTagPostProcessor : TagPostProcessor{
                 for (attr in attrs) {
                     attrsText += ", %s=%s".format(mapAttrKey(attr.key), attr.value)
                 }
-                val linkText = " link:%s[%s%s]".format(url, text, attrsText)
+                var linkText = "link:%s[%s%s]".format(url, text, attrsText)
+
+                val prev =element.previousSibling()
+                val next =element.nextSibling()
+                val isPrevSpaced= prev is TextNode && prev.text().endsWith(" ")
+                val isNextSpaced= next is TextNode && next.text().startsWith(" ")
+
+                if(!isPrevSpaced){
+                    linkText = " $linkText"
+                }
+                if(!isNextSpaced){
+                    linkText = "$linkText "
+                }
                 element.replaceWith(TextNode(linkText))
             }
         }
