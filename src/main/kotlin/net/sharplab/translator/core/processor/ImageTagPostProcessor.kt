@@ -13,19 +13,18 @@ class ImageTagPostProcessor : TagPostProcessor {
         if(element.tagName() == "span" && element.classNames().contains("image")){
             val imgTag = element.selectFirst("img")
             val src = imgTag.attr("src")
-            val attrs = imgTag.attributes().filter { attr -> attr.key != "src" }
-            val attrsText = attrs.map { "%s=\"%s\"".format(it.key, it.value) }.joinToString(", ")
-            var imageText = "image:%s[%s]".format(src, attrsText)
+            val alt = imgTag.attr("alt")
+            var imageText = "image:%s[alt=%s]".format(src, alt)
 
             val prev =element.previousSibling()
             val next =element.nextSibling()
-            val isPrevNonSpacedTextNode= prev is TextNode && prev.text().endsWith(" ")
-            val isNextNonSpacedTextNode= next is TextNode && next.text().startsWith(" ")
+            val isPrevSpaced= prev is TextNode && prev.text().endsWith(" ")
+            val isNextSpaced= next is TextNode && next.text().startsWith(" ")
 
-            if(isPrevNonSpacedTextNode){
+            if(!isPrevSpaced){
                 imageText = " $imageText"
             }
-            if(isNextNonSpacedTextNode){
+            if(!isNextSpaced){
                 imageText = "$imageText "
             }
             element.replaceWith(TextNode(imageText))

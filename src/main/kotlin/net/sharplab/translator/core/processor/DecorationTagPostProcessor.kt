@@ -24,7 +24,7 @@ class DecorationTagPostProcessor(private val tagName: String, private val openQu
                 isNextSpaced -> closeQuote
                 else -> "$closeQuote "
             }
-            element.replaceWith(TextNode(openStr + element.wholeText() + closeStr))
+            element.replaceWith(TextNode(openStr + element.html() + closeStr))
         }
         element.children().forEach{
             replaceToQuote(it)
