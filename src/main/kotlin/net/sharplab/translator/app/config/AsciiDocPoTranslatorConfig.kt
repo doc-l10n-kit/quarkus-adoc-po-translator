@@ -2,6 +2,7 @@ package net.sharplab.translator.app.config
 
 import net.sharplab.translator.app.setting.AsciiDocPoTranslatorSetting
 import net.sharplab.translator.core.driver.translator.DeepLTranslator
+import net.sharplab.translator.core.driver.translator.GlobaleseTranslator
 import net.sharplab.translator.core.driver.translator.MSTranslator
 import net.sharplab.translator.core.driver.translator.Translator
 import javax.enterprise.context.Dependent
@@ -14,6 +15,13 @@ class AsciiDocPoTranslatorConfig(private val asciiDocPoTranslatorSetting: AsciiD
     fun translator(): Translator
     {
         return when (asciiDocPoTranslatorSetting.engine?.toLowerCase()){
+            "globalese".toLowerCase() -> {
+                val globaleseEndpoint = asciiDocPoTranslatorSetting.globaleseEndpoint
+                val globaleseUsername = asciiDocPoTranslatorSetting.globaleseUsername
+                val globalesePassword = asciiDocPoTranslatorSetting.globaleseApiKey
+                val globaleseProjectId = asciiDocPoTranslatorSetting.globaleseProjectId
+                GlobaleseTranslator(globaleseEndpoint!!, globaleseUsername!!, globalesePassword!!, globaleseProjectId!!)
+            }
             "deepL".toLowerCase() -> {
                 val deepLApiKey = asciiDocPoTranslatorSetting.deepLApiKey
                 DeepLTranslator(deepLApiKey!!)

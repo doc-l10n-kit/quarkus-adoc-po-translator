@@ -1,0 +1,2256 @@
+openapi: 3.0.0
+servers: []
+info:
+  description: |
+    This is the Globalese API v2.1 documentation.
+    More information about Globalese:
+    [globalese.ai](https://www.globalese-mt.com)
+
+    **Base URL**
+    ```
+    https://{subdomain}.globalese.ai/api/v2.1/
+    ```
+
+    The use of the `https` protocol is mandatory.
+
+    # Authentication
+    Globalese requires Basic HTTP authentication. Every request **must** contain an `Authorization` header using the username and API key associated with a user account existing in Globalese.
+
+    Assuming the username is `john_doe` and the API key is `12345678`, the header entry should look like this:
+    ```
+    Authorization: Basic am9obl9kb2U6MTIzNDU2Nzg=
+    ```
+    The actions performed through the API reflect the restrictions by groups and permissions the authenticated user has.
+
+    # Checking user credentials
+    Globalese offers the `/` endpoint accepting `GET` requests.
+
+    Sending an empty `GET /` request with the appropriate `Authorization` header will either return a `200` or a `401` response.
+
+    # Format
+    The necessary parameters must be passed on in the following manner:
+    * `GET` and `DELETE` requests: in the query part of the URL
+    * `POST`, `PUT` and `PATCH` requests: in the request body as a JSON-encoded array
+    * File uploads: in the request body
+
+    ## Passing arrays in GET requests
+    If a request parameter is an array, use a comma-separated form of array elements (no spaces) in the `GET` request parameters. For example, if:
+    ```
+    $group = [1, 3, 7]
+    ```
+    then in the request, use the query parameters in the form of
+    ```
+    ?group=1,3,7
+    ```
+
+    ## Language codes
+    Globalese works with the 2-letter [ISO 639-1 codes](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes) for languages and the 2-letter [ISO-3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) codes for countries in the following format:
+    ```
+    en
+    fr
+    zh
+    ```
+    or
+    ```
+    en-us
+    fr-fr
+    zh-cn
+    ```
+
+    # Responses
+    ## Format
+    All responses containing a body that is not a file use the JSON format.
+
+    ## HTTP status codes used
+    The following HTTP status codes are sent back in response headers:
+    ```
+    200  The request has been processed.
+    201  A new resource has been created.
+    400  Bad request or missing required parameter.
+    401  Unauthorized request.
+    403  Insufficient user permissions.
+    404  Entity not found.
+    500  Internal error while processing the request.
+    ```
+
+    ## Error messages
+    In case the request returns an error, the error message is sent in JSON format as shown here (except for 401 responses which always indicate an authorisation error):
+    ```
+    {
+        "error": "Some error message."
+    }
+    ```
+  version: '2.2'
+  title: Globalese
+tags:
+  - name: Corpora
+  - name: Engines
+  - name: Groups
+  - name: Languages
+  - name: Projects
+  - name: Stock engines
+  - name: Translation files
+  - name: Users
+    description: Only accessible to system administrators.
+paths:
+  /corpora:
+    get:
+      tags:
+        - Corpora
+      summary: List corpora
+      description: Returns a collection of corpora, optionally filtered.
+      parameters:
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/offset'
+        - $ref: '#/components/parameters/source'
+        - $ref: '#/components/parameters/target'
+        - $ref: '#/components/parameters/groups'
+        - $ref: '#/components/parameters/engineId'
+        - $ref: '#/components/parameters/metadataDomain'
+        - $ref: '#/components/parameters/metadataSubject'
+        - $ref: '#/components/parameters/metadataClient'
+        - $ref: '#/components/parameters/metadataProject'
+        - $ref: '#/components/parameters/metadataDescription'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CorpusCollection'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '500':
+          $ref: '#/components/responses/500InternalServerError'
+      security:
+        - basic: []
+    post:
+      tags:
+        - Corpora
+      summary: Create a new corpus entity as a prerequisite before uploading
+      description: |
+        This is the first of the required two steps for uploading a new corpus.
+        The second step is `PUT /corpora/{id}`
+      responses:
+        '201':
+          headers:
+            Location:
+              schema:
+                type: string
+              description: |
+                URI of the newly created corpus.
+                Example: /corpora/532352f85e2149.3a073428
+          description: |
+            The ID of the newly created corpus.
+            The next step **must** be `PUT corpora/{id}`
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: The new corpus ID.
+                example:
+                  id: 532352f85e2149.3a073428
+        '400':
+          $ref: '#/components/responses/400BadRequest'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+      security:
+        - basic: []
+      requestBody:
+        $ref: '#/components/requestBodies/createCorpus'
+  '/corpora/{id}':
+    get:
+      tags:
+        - Corpora
+      summary: Show the details of a corpus
+      description: Returns a single corpus.
+      parameters:
+        - name: id
+          in: path
+          description: corpus ID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Corpus'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '404':
+          $ref: '#/components/responses/404NotFound'
+      security:
+        - basic: []
+    put:
+      tags:
+        - Corpora
+      summary: Upload a corpus
+      description: |
+        This is the second of the required two steps for uploading a new corpus.
+        The first step is `POST /corpora`
+
+        It can also be used to update the content of an existing corpus.
+
+        Accepted CAT tool file formats:
+        * `.mqxliff`/`.mqxlz` from memoQ
+        * `.mxliff` from Memsource
+        * `.sdlxliff` from SDL Trados Studio
+        * `.tbx`
+        * `.tmx`
+        * `.txlf` from Wordfast
+        * `.xliff`/`.xlf` from Smartcat, XTM, translate5, Wordbee, SDL (Idiom) WorldServer, or any standard XLIFF 1.2
+        * `.xlz` from SDL (Idiom) WorldServer
+
+        Accepted delimited file formats:
+        * `.bi`
+        * `.csv` (either comma- or semicolon-delimited)
+        * `.tsv`
+      parameters:
+        - name: id
+          in: path
+          description: The ID of the corpus to be uploaded.
+          required: true
+          schema:
+            type: string
+      responses:
+        '201':
+          description: Created
+          headers:
+            Location:
+              schema:
+                type: string
+              description: |
+                URI of the newly created corpus.
+                Example: /corpora/532352f85e2149.3a073428
+        '400':
+          $ref: '#/components/responses/400BadRequest'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '500':
+          $ref: '#/components/responses/500InternalServerError'
+      security:
+        - basic: []
+      requestBody:
+        required: true
+        content:
+          text/plain:
+            schema:
+              type: string
+              example: <?xml version='1.0' encoding='UTF-8' ?><tmx version='1.4b'><header srclang='en' /><body><tu><tuv xml:lang='en'><seg>One</seg></tuv><tuv xml:lang='es'><seg>Uno</seg></tuv></tu></body></tmx>
+    patch:
+      tags:
+        - Corpora
+      summary: Update corpus name, groups or metadata
+      parameters:
+        - name: id
+          in: path
+          description: The ID of the corpus to be updated.
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          $ref: '#/components/responses/200OK'
+        '400':
+          $ref: '#/components/responses/400BadRequest'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '404':
+          $ref: '#/components/responses/404NotFound'
+        '500':
+          $ref: '#/components/responses/500InternalServerError'
+      security:
+        - basic: []
+      requestBody:
+        $ref: '#/components/requestBodies/updateCorpus'
+    delete:
+      tags:
+        - Corpora
+      summary: Delete a corpus
+      parameters:
+        - name: id
+          in: path
+          description: The ID of the corpus to be deleted.
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          $ref: '#/components/responses/204NoContent'
+        '400':
+          $ref: '#/components/responses/400BadRequest'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '404':
+          $ref: '#/components/responses/404NotFound'
+        '500':
+          $ref: '#/components/responses/500InternalServerError'
+      security:
+        - basic: []
+  '/corpora/{id}/download':
+    get:
+      tags:
+        - Corpora
+      summary: Download a corpus in a zipped TMX file
+      description: Returns a zip file containing a TMX file.
+      parameters:
+        - name: id
+          in: path
+          description: Corpus ID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A zip file containing a TMX file made from the corpus content.
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '404':
+          $ref: '#/components/responses/404NotFound'
+        '500':
+          $ref: '#/components/responses/500InternalServerError'
+      security:
+        - basic: []
+  '/corpora/merge':
+    post:
+      tags:
+        - Corpora
+      summary: Merge corpora
+      description: |
+        Creates a new corpus by merging multiple corpora.
+      responses:
+        '201':
+          headers:
+            Location:
+              schema:
+                type: string
+              description: |
+                URI of the newly created corpus.
+                Example: /corpora/532352f85e2150.3a073450
+          description: |
+            The ID of the newly created corpus.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: The new corpus ID.
+                example:
+                  id: 532352f85e2150.3a073450
+        '400':
+          $ref: '#/components/responses/400BadRequest'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '500':
+          $ref: '#/components/responses/500InternalServerError'
+      security:
+        - basic: []
+      requestBody:
+        $ref: '#/components/requestBodies/mergeCorpora'
+  /engines:
+    get:
+      tags:
+        - Engines
+      summary: List engines
+      description: |
+        Returns a collection of engines, optionally filtered.
+
+        If the license allows the use of stock engines, and both the `source` and `target` parameters are provided,
+        the response may also continue an entry with the ID `stock`.
+      parameters:
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/offset'
+        - $ref: '#/components/parameters/source'
+        - $ref: '#/components/parameters/target'
+        - $ref: '#/components/parameters/engineStatus'
+        - $ref: '#/components/parameters/groups'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EngineCollection'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '500':
+          $ref: '#/components/responses/500InternalServerError'
+      security:
+        - basic: []
+    post:
+      tags:
+        - Engines
+      summary: Create a new engine
+      security:
+        - basic: []
+      requestBody:
+        $ref: '#/components/requestBodies/createEngine'
+      responses:
+        '201':
+          description: Created
+          headers:
+            Location:
+              schema:
+                type: string
+              description: |
+                URI of the newly created engine.
+                Example: /engines/11
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    description: The new engine ID.
+                example:
+                  id: 11
+        '400':
+          $ref: '#/components/responses/400BadRequest'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '402':
+          description: Engine limit allowed by license reached.
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '500':
+          $ref: '#/components/responses/500InternalServerError'
+  '/engines/{id}':
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      tags:
+        - Engines
+      summary: Show the details of an engine
+      description: Returns a single engine.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Engine'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '404':
+          $ref: '#/components/responses/404NotFound'
+      security:
+        - basic: []
+    patch:
+      tags:
+        - Engines
+      summary: Update an engine
+      responses:
+        '200':
+          $ref: '#/components/responses/200OK'
+        '400':
+          $ref: '#/components/responses/400BadRequest'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '500':
+          $ref: '#/components/responses/500InternalServerError'
+      security:
+        - basic: []
+      requestBody:
+        $ref: '#/components/requestBodies/updateEngine'
+    delete:
+      tags:
+        - Engines
+      summary: Delete an engine
+      responses:
+        '204':
+          $ref: '#/components/responses/204NoContent'
+        '400':
+          $ref: '#/components/responses/400BadRequest'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '404':
+          $ref: '#/components/responses/404NotFound'
+        '500':
+          $ref: '#/components/responses/500InternalServerError'
+      security:
+        - basic: []
+  '/engines/{id}/train':
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    post:
+      tags:
+        - Engines
+      summary: Train an engine
+      description: |
+        **Note:** An engine can only be trained if it is not being trained at the moment, i.e. it has the status `untrained`, `trained` or `changed`.
+        The corpora included in the engine must exceed the required minimum volume.
+      responses:
+        '202':
+          $ref: '#/components/responses/202Accepted'
+        '400':
+          $ref: '#/components/responses/400BadRequest'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '402':
+          description: Training has been disabled because subscription has expired.
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '404':
+          $ref: '#/components/responses/404NotFound'
+        '500':
+          $ref: '#/components/responses/500InternalServerError'
+        '502':
+          $ref: '#/components/responses/502BadGateway'
+      security:
+        - basic: []
+  '/engines/{id}/tune':
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    post:
+      tags:
+        - Engines
+      summary: Tune an engine
+      description: |
+        **Note:** A stock+ engine can only be tuned if it is not being trained at the moment, i.e. it has the status `untrained`, `trained` or `changed`.
+
+        A custom engine can only be tuned if engine's status is `changed`, the engine has been trained/tuned before, the use of the core corpora has changed, the use of the auxiliary and stock corpora haven't changed and the engine size is above the minimum threshold.
+      responses:
+        '202':
+          $ref: '#/components/responses/202Accepted'
+        '400':
+          $ref: '#/components/responses/400BadRequest'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '402':
+          description: Tuning has been disabled because subscription has expired.
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '404':
+          $ref: '#/components/responses/404NotFound'
+        '500':
+          $ref: '#/components/responses/500InternalServerError'
+        '502':
+          $ref: '#/components/responses/502BadGateway'
+      security:
+        - basic: []
+  '/engines/{id}/cancel':
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    post:
+      tags:
+        - Engines
+      summary: Cancel the training of an engine
+      responses:
+        '204':
+          $ref: '#/components/responses/204NoContent'
+        '400':
+          $ref: '#/components/responses/400BadRequest'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '404':
+          $ref: '#/components/responses/404NotFound'
+        '500':
+          $ref: '#/components/responses/500InternalServerError'
+      security:
+        - basic: []
+  /groups:
+    get:
+      tags:
+        - Groups
+      summary: List groups
+      description: Returns a collection of groups the user is member of.
+      parameters:
+        - $ref: '#/components/parameters/permissions'
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/offset'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupCollection'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '500':
+          $ref: '#/components/responses/500InternalServerError'
+      security:
+        - basic: []
+  /groups/{id}:
+    get:
+      tags:
+        - Groups
+      summary: Show the details of a group
+      description: Returns a single group.
+      parameters:
+        - name: id
+          in: path
+          description: group ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '404':
+          $ref: '#/components/responses/404NotFound'
+        '500':
+          $ref: '#/components/responses/500InternalServerError'
+      security:
+        - basic: []
+  /languages:
+    get:
+      tags:
+        - Languages
+      summary: List languages
+      description: Returns a collection of languages.
+      parameters:
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/offset'
+        - $ref: '#/components/parameters/languageCode'
+        - $ref: '#/components/parameters/languageTool'
+        - $ref: '#/components/parameters/languageUsage'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LanguageCollection'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '500':
+          $ref: '#/components/responses/500InternalServerError'
+      security:
+        - basic: []
+  /languages/{id}:
+    get:
+      tags:
+        - Languages
+      summary: Show the details of a language
+      description: Returns a single language.
+      parameters:
+        - name: id
+          in: path
+          description: language ID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Language'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '404':
+          $ref: '#/components/responses/404NotFound'
+      security:
+        - basic: []
+  /projects:
+    get:
+      tags:
+        - Projects
+      summary: List projects
+      description: Returns a collection of projects, optionally filtered.
+      parameters:
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/offset'
+        - $ref: '#/components/parameters/source'
+        - $ref: '#/components/parameters/target'
+        - $ref: '#/components/parameters/groups'
+        - $ref: '#/components/parameters/engineId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectCollection'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '500':
+          $ref: '#/components/responses/500InternalServerError'
+      security:
+        - basic: []
+    post:
+      tags:
+        - Projects
+      summary: Create a new project
+      responses:
+        '201':
+          description: Project created
+          headers:
+            Location:
+              schema:
+                type: string
+              description: |
+                URI of the newly created project.
+                Example: /projects/53
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '400':
+          $ref: '#/components/responses/400BadRequest'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '500':
+          $ref: '#/components/responses/500InternalServerError'
+      security:
+        - basic: []
+      requestBody:
+        $ref: '#/components/requestBodies/createProject'
+  '/projects/{id}':
+    get:
+      tags:
+        - Projects
+      summary: Show the details of a project
+      description: Returns a single project.
+      parameters:
+        - name: id
+          in: path
+          description: Project ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '404':
+          $ref: '#/components/responses/404NotFound'
+      security:
+        - basic: []
+    patch:
+      tags:
+        - Projects
+      summary: Update a project
+      parameters:
+        - name: id
+          in: path
+          description: The ID of the project to be updated.
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Project updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '400':
+          $ref: '#/components/responses/400BadRequest'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '404':
+          $ref: '#/components/responses/404NotFound'
+        '500':
+          $ref: '#/components/responses/500InternalServerError'
+      security:
+        - basic: []
+      requestBody:
+        $ref: '#/components/requestBodies/updateProject'
+    delete:
+      tags:
+        - Projects
+      summary: Delete a project
+      parameters:
+        - name: id
+          in: path
+          description: The ID of the project to be deleted.
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          $ref: '#/components/responses/200OK'
+        '400':
+          $ref: '#/components/responses/400BadRequest'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '404':
+          $ref: '#/components/responses/404NotFound'
+        '500':
+          $ref: '#/components/responses/500InternalServerError'
+      security:
+        - basic: []
+  '/projects/{id}/clone':
+    post:
+      deprecated: true
+      tags:
+        - Projects
+      summary: Clone a project
+      description: |
+        **Note:** The cloned project must have an engine assigned to it, as it is not allowed to create a new project without an engine.
+      parameters:
+        - name: id
+          in: path
+          description: The ID of the project to be cloned.
+          required: true
+          schema:
+            type: integer
+      responses:
+        '201':
+          description: Created
+          headers:
+            Location:
+              schema:
+                type: string
+              description: |
+                URI of the cloned project.
+                Example: /projects/93
+        '400':
+          $ref: '#/components/responses/400BadRequest'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '404':
+          $ref: '#/components/responses/404NotFound'
+        '500':
+          $ref: '#/components/responses/500InternalServerError'
+      security:
+        - basic: []
+      requestBody:
+        $ref: '#/components/requestBodies/cloneProject'
+  /stock-engines:
+    get:
+      tags:
+        - Stock engines
+      security:
+        - basic: []
+      summary: List stock engines
+      description: |
+        Returns a list of available stock engines, optionally filtered.
+
+        Required permission: `MANAGE_ENGINES|MANAGE_PROJECTS|SYSTEM_ADMINISTRATOR`
+      parameters:
+        - $ref: '#/components/parameters/source'
+        - $ref: '#/components/parameters/target'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StockEngineCollection'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '500':
+          $ref: '#/components/responses/500InternalServerError'
+  /translation-files:
+    get:
+      tags:
+        - Translation files
+      summary: List translation files
+      description: Returns a collection of translation files, optionally filtered.
+      parameters:
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/offset'
+        - $ref: '#/components/parameters/source'
+        - $ref: '#/components/parameters/target'
+        - $ref: '#/components/parameters/projectId'
+        - $ref: '#/components/parameters/groups'
+        - $ref: '#/components/parameters/fileStatus'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TranslationFileCollection'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '500':
+          $ref: '#/components/responses/500InternalServerError'
+      security:
+        - basic: []
+    post:
+      tags:
+        - Translation files
+      summary: Create a new translation file entity as a prerequisite before uploading
+      description: |
+        This is the first of the required two steps for uploading a new translation file.
+        The second step is `POST /translation-files/{id}`
+      responses:
+        '201':
+          headers:
+            Location:
+              schema:
+                type: string
+              description: |
+                URI of the newly created translation file.
+                Example: /translation-files/532352e85e0049.37076692
+          description: |
+            The ID of the newly created translation file.
+            The next step **must** be `POST translation-files/{id}`
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: The new translation file ID.
+                example:
+                  id: 532352e85e0049.37076692
+        '400':
+          $ref: '#/components/responses/400BadRequest'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+      security:
+        - basic: []
+      requestBody:
+        $ref: '#/components/requestBodies/createTranslationFile'
+  '/translation-files/{id}':
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags:
+        - Translation files
+      summary: Show the details of a translation file
+      description: Returns a single translation file.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TranslationFile'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '404':
+          $ref: '#/components/responses/404NotFound'
+      security:
+        - basic: []
+    post:
+      tags:
+        - Translation files
+      summary: Upload a translation file
+      description: |
+        This is the second of the required two steps for uploading a new translation file.
+        The first step is `POST /translation-files`.
+
+        Accepted CAT tool file formats:
+        * `.mqxliff`/`.mqxlz` from memoQ
+        * `.mxliff` from Memsource
+        * `.sdlxliff` from SDL Trados Studio
+        * `.txlf` from Wordfast
+        * `.xliff`/`.xlf` from Smartcat, XTM, translate5, Wordbee, SDL (Idiom) WorldServer, or any standard XLIFF 1.2
+        * `.xlz` from SDL (Idiom) WorldServer
+      responses:
+        '201':
+          description: Created
+          headers:
+            Location:
+              schema:
+                type: string
+              description: |
+                URI of the newly created translation file.
+                Example: /translation-files/532352e85e0049.37076692
+        '400':
+          $ref: '#/components/responses/400BadRequest'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '500':
+          $ref: '#/components/responses/500InternalServerError'
+      security:
+        - basic: []
+      requestBody:
+        required: true
+        content:
+          text/plain:
+            schema:
+              type: string
+              example: <?xml version='1.0'?><xliff version='1.2' xmlns='urn:oasis:names:tc:xliff:document:1.2'>[...]</xliff>
+    delete:
+      tags:
+        - Translation files
+      summary: Delete a translation file
+      responses:
+        '200':
+          description: Success
+        '400':
+          description: Translation file cannot be deleted
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '404':
+          $ref: '#/components/responses/404NotFound'
+        '500':
+          $ref: '#/components/responses/500InternalServerError'
+      security:
+        - basic: []
+  '/translation-files/{id}/download':
+    get:
+      tags:
+        - Translation files
+      summary: Download a translation file
+      description: Returns a translation file.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: state
+          in: query
+          description: Original or translated state of the file.
+          required: true
+          schema:
+            type: string
+            enum:
+              - original
+              - translated
+        - name: zip
+          in: query
+          description: |
+            Whether or not to zip the file before downloading.
+
+            Defaults to 'false'.
+          required: false
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: A translation file, optionally zipped.
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                example: >-
+                  <?xml version='1.0'?><xliff>[file content]</xliff>
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '404':
+          $ref: '#/components/responses/404NotFound'
+        '500':
+          $ref: '#/components/responses/500InternalServerError'
+      security:
+        - basic: []
+  '/translation-files/{id}/translate':
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      tags:
+        - Translation files
+      summary: Translate a file
+      description: |
+        **Note:** A file can only be translated if the engine assigned for the project is ready for translation, i.e. it has the status `trained` or `changed`.
+      responses:
+        '200':
+          $ref: '#/components/responses/200OK'
+        '400':
+          $ref: '#/components/responses/400BadRequest'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '402':
+          description: Translation has been disabled because subscription has expired.
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '404':
+          $ref: '#/components/responses/404NotFound'
+        '500':
+          $ref: '#/components/responses/500InternalServerError'
+      security:
+        - basic: []
+  '/translation-files/{id}/cancel':
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      tags:
+        - Translation files
+      summary: Cancel the translation of a file
+      description: |
+        Translations can only be cancelled if they are still in the queue.
+      responses:
+        '200':
+          $ref: '#/components/responses/200OK'
+        '400':
+          $ref: '#/components/responses/400BadRequest'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '404':
+          $ref: '#/components/responses/404NotFound'
+        '500':
+          $ref: '#/components/responses/500InternalServerError'
+      security:
+        - basic: []
+  /users:
+    get:
+      tags:
+        - Users
+      summary: List users
+      description: Returns a collection of all users in the system.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserCollection'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '500':
+          $ref: '#/components/responses/500InternalServerError'
+      security:
+        - basic: []
+  '/users/{id}':
+    get:
+      tags:
+        - Users
+      summary: Show the details of a user
+      description: Returns a single user.
+      parameters:
+        - name: id
+          in: path
+          description: user ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '404':
+          $ref: '#/components/responses/404NotFound'
+      security:
+        - basic: []
+components:
+  schemas:
+    Corpus:
+      type: object
+      required:
+        - id
+        - name
+        - source_language
+        - target_language
+        - segment_count
+        - source_wordcount
+        - target_wordcount
+        - source_character_count
+        - target_character_count
+        - groups
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        source_language:
+          description: Source language
+          type: string
+        target_language:
+          description: Target language
+          type: string
+        segment_count:
+          type: integer
+        source_wordcount:
+          type: integer
+        target_wordcount:
+          type: integer
+        source_character_count:
+          type: integer
+        target_character_count:
+          type: integer
+        groups:
+          type: array
+          items:
+            type: integer
+        engines:
+          type: array
+          items:
+            type: integer
+        metadata:
+          $ref: '#/components/schemas/CorpusMetadata'
+      example:
+        id: 5a0ba1267f0571.04642701
+        name: English to German DGT.tmx
+        source_language: en
+        target_language: de-de
+        segment_count: 145952
+        source_wordcount: 2819806
+        target_wordcount: 3120176
+        source_character_count: 24235334
+        target_character_count: 29194748
+        groups: [1, 3]
+        engines: [2, 8, 14]
+        metadata:
+          domain: "legal"
+          subject: "EU treaties"
+          client: "Very Important Client"
+          project: ""
+          description: "created by DGT"
+    CorpusCollection:
+      type: array
+      items:
+        $ref: '#/components/schemas/Corpus'
+      example:
+        - id: 5a0ba1267f0571.04642701
+          name: English to German DGT.tmx
+          source_language: en
+          target_language: de-de
+          segment_count: 145952
+          source_wordcount: 2819806
+          target_wordcount: 3120176
+          source_character_count: 24819803
+          target_character_count: 40481457
+          groups: [1, 3]
+          engines: [2, 8, 14]
+          metadata:
+            domain: "legal"
+            subject: "EU treaties"
+            client: "Very Important Client"
+            project: ""
+            description: "created by DGT"
+        - id: 5b04a7263fa5c1.a4444792
+          name: Dutch to French DGT.tmx
+          source_language: nl
+          target_language: fr
+          segment_count: 246058
+          source_wordcount: 4241985
+          target_wordcount: 4924251
+          source_character_count: 39240885
+          target_character_count: 45437654
+          groups: [3]
+          engines: [4, 7]
+          metadata:
+            domain: "legal"
+            subject: "EU treaties"
+            client: "Another Very Important Client"
+            project: "Communiqués 2017"
+            description: "created by DGT"
+    createCorpus:
+      type: object
+      required:
+        - name
+        - source-language
+        - target-language
+        - groups
+      properties:
+        name:
+          type: string
+        source-language:
+          type: string
+        target-language:
+          type: string
+        groups:
+          type: array
+          items:
+            type: integer
+        metadata:
+          $ref: '#/components/schemas/CorpusMetadata'
+      example:
+        name: New corpus.tmx
+        source-language: en
+        target-language: es
+        groups: [1, 2]
+        metadata:
+          domain: "legal"
+          subject: "EU treaties"
+          client: "Very Important Client"
+          project: "Communiqués 2017"
+          description: "created by DGT"
+    updateCorpus:
+      type: object
+      properties:
+        name:
+          type: string
+        groups:
+          type: array
+          items:
+            type: integer
+        metadata:
+          $ref: '#/components/schemas/CorpusMetadata'
+      example:
+        name: Changed corpus name
+        groups: [1, 2, 3]
+        metadata:
+          domain: "finance"
+          description: "curated by Susan from accounting"
+    mergeCorpora:
+      type: object
+      required:
+        - corpora
+        - name
+        - groups
+      properties:
+        corpora:
+          type: array
+          items:
+            type: string
+          description: |
+            The IDs of all corpora to be merged.
+        name:
+          type: string
+        groups:
+          type: array
+          items:
+            type: integer
+        metadata:
+          $ref: '#/components/schemas/CorpusMetadata'
+      example:
+        corpora: ["550b63267f9971.01642883", "590ba1388f0571.04616201", "5a0c80267f0571.21642798"]
+        name: Newly merged megacorpus
+        groups: [2]
+    CorpusMetadata:
+      type: object
+      properties:
+        domain:
+          type: string
+        subject:
+          type: string
+        client:
+          type: string
+        project:
+          type: string
+        description:
+          type: string
+    Engine:
+      type: object
+      required:
+        - id
+        - name
+        - source_language
+        - target_language
+        - group
+        - status
+        - ready
+        - version
+        - stock_engine
+        - corpora
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+          example: Engine 1
+        source_language:
+          type: string
+          example: en
+        target_language:
+          type: string
+          example: it
+        group:
+          type: integer
+          example: 1
+        status:
+          type: string
+          description: Training status
+          enum:
+            - changed
+            - empty
+            - error
+            - queued
+            - trained
+            - training
+        ready:
+          type: boolean
+        version:
+          type: string
+          nullable: true
+          example: 3.5.5
+        stock_engine:
+          type: boolean
+          description: Whether or not the engine is based on a stock engine
+        corpora:
+          $ref: '#/components/schemas/EngineCorpora'
+    EngineCollection:
+      type: array
+      items:
+        $ref: '#/components/schemas/Engine'
+    EngineCorpora:
+      type: object
+      description: An engine cannot contain more than 500 corpora in total.
+      required:
+        - core
+        - auxiliary
+        - stock
+      properties:
+        auxiliary:
+          type: array
+          items:
+            type: string
+          example: ['51fc7ea3fa889.a0027797', '54018363fa5c1.a44227af']
+        core:
+          type: array
+          items:
+            type: string
+          example: ['5b04a7263fa509.a4444794', '5b0412363fa5c1.a4354792']
+        stock:
+          type: boolean
+    createEngine:
+      type: object
+      required:
+        - name
+        - source-language
+        - target-language
+        - group
+        - corpora
+      properties:
+        name:
+          type: string
+        source-language:
+          type: string
+        target-language:
+          type: string
+        group:
+          type: integer
+        corpora:
+          $ref: '#/components/schemas/EngineCorpora'
+        stock-engine:
+          type: boolean
+          description: Create a new customised engine based on a stock engine.
+      example:
+        name: Engine 1
+        source-language: en
+        target-language: de
+        group: 1
+        corpora:
+          core: ['5223a7263fa509.a4644764', '5b0412663fa5c1.a4356792']
+          auxiliary: ['51fc7e83fa88c.a0827897', '54018368fa5c1.a46727af']
+          stock: false
+        stock-engine: false
+    updateEngine:
+      type: object
+      properties:
+        name:
+          type: string
+        corpora:
+          $ref: '#/components/schemas/EngineCorpora'
+      example:
+        name: Changed engine name
+        corpora:
+          core: ['5223a7263fa509.a4644764']
+          auxiliary: ['51fc7e83fa88c.a0827897', '54018368fa5c1.a46727af', '5b12663f5ba5c1.a4e678e8']
+          stock: true
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "Error message."
+      required:
+        - error
+    Group:
+      type: object
+      required:
+        - id
+        - name
+        - created_at
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Default
+        created_at:
+          type: string
+          format: 'date-time'
+          example: '2019-03-09T11:08:38+00:00'
+    GroupCollection:
+      type: array
+      items:
+        $ref: '#/components/schemas/Group'
+      example:
+        - id: 1
+          name: Group 1
+          created_at: '2019-03-09T11:08:38+00:00'
+        - id: 2
+          name: Group 2
+          created_at: '2019-07-10T10:42:35+00:00'
+    Language:
+      type: object
+      required:
+        - id
+        - memoq
+        - xtm
+      properties:
+        id:
+          type: string
+        memoq:
+          type: string
+        xtm:
+          type: string
+      example:
+        id: en-us
+        memoq: eng-US
+        xtm: en_US
+    LanguageCollection:
+      type: array
+      items:
+        $ref: '#/components/schemas/Language'
+      example:
+        - id: en-us
+          memoq: eng-US
+          xtm: en_US
+        - id: hu-hu
+          memoq: hun
+          xtm: hu_HU
+    Project:
+      type: object
+      required:
+        - id
+        - name
+        - source_language
+        - target_language
+        - group
+        - engine_id
+        - stock_engine_id
+        - status
+        - created_at
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Project 1
+        source_language:
+          type: string
+          example: en
+        target_language:
+          type: string
+          example: fr-ca
+        group:
+          type: integer
+          example: 3
+        engine_id:
+          type: integer
+          example: 10
+          nullable: true
+        stock_engine_id:
+          type: integer
+          example: 15
+          nullable: true
+        status:
+          type: string
+          enum:
+            - empty
+            - error
+            - new
+            - partially_error
+            - partially_queued
+            - partially_translated
+            - partially_translating
+            - queued
+            - translated
+            - translating
+        cat_server_type:
+          type: string
+          description: Type of CAT tool server to associate the project with.
+          enum:
+            - memoq
+            - memsource
+            - smartcat
+            - xtm
+        cat_server_id:
+          type: integer
+          description: CAT tool server connection ID as stored in Globalese.
+          example: 2
+        cat_project_id:
+          type: string
+#          oneOf:
+#            - type: integer
+#            - type: string
+          description: CAT tool project ID as stored on the CAT tool server.
+          example: 5987c27a-da1e-4060-b08d-00aa6dbd0bba
+        created_at:
+          type: string
+          format: 'date-time'
+          example: '2019-03-09T11:08:38+00:00'
+        updated_at:
+          type: string
+          format: 'date-time'
+          example: '2019-11-16T18:33:02+00:00'
+    ProjectCollection:
+      type: array
+      items:
+        $ref: '#/components/schemas/Project'
+      example:
+        - id: 1
+          name: Project 1
+          source_language: it
+          target_language: de
+          group: 1
+          engine: 3
+          status: new
+          created_at: '2019-03-09T11:08:38+00:00'
+          updated_at: null
+        - id: 2
+          name: Project 2
+          source_language: ja
+          target_language: pt-br
+          group: 1
+          engine: stock
+          status: partially_translating
+          created_at: '2019-05-03T22:18:18+00:00'
+          updated_at: '2019-06-20T21:11:12+00:00'
+    createProject:
+      type: object
+      required:
+        - name
+        - source-language
+        - target-language
+        - group
+        - engine
+      properties:
+        name:
+          type: string
+          example: Project 1
+        source-language:
+          type: string
+          example: en
+        target-language:
+          type: string
+          example: fr-ca
+        group:
+          type: integer
+          example: 3
+        engine:
+          description: An engine ID, or the string `stock` to use the stock engine for the language combination (if available).
+          type: integer
+#          oneOf:
+#            - type: integer
+#            - type: string
+          example: 10
+        cat-server-id:
+          type: integer
+          description: CAT tool server connection ID as stored in Globalese.
+          example: 2
+        cat-project-id:
+          type: string
+#          oneOf:
+#            - type: integer
+#            - type: string
+          description: CAT tool project ID as stored on the CAT tool server.
+          example: 5987c27a-da1e-4060-b08d-00aa6dbd0bba
+    cloneProject:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+      example:
+        name: Cloned project
+    updateProject:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Updated project name
+        engine:
+          type: integer
+#          oneOf:
+#            - type: integer
+#            - type: string
+          example: 15
+        cat-server-id:
+          type: integer
+          description: CAT tool server connection ID as stored in Globalese.
+          example: 2
+        cat-project-id:
+          type: string
+#          oneOf:
+#            - type: integer
+#            - type: string
+          description: CAT tool project ID as stored on the CAT tool server.
+          example: 5987c27a-da1e-4060-b08d-00aa6dbd0bba
+    StockEngineCollection:
+      type: array
+      items:
+        $ref: '#/components/schemas/StockEngine'
+    StockEngine:
+      type: object
+      required:
+        - source_language
+        - target_language
+      properties:
+        source_language:
+          type: string
+          example: en
+        target_language:
+          type: string
+          example: it
+    TranslationFile:
+      type: object
+      required:
+        - id
+        - name
+        - source_language
+        - target_language
+        - project
+        - segment_count
+        - wordcount
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        source_language:
+          type: string
+        target_language:
+          type: string
+        project:
+          type: integer
+        status:
+          type: string
+          description: Translation status
+          enum:
+            - empty
+            - new
+            - queued
+            - translating
+            - translated
+        segment_count:
+          $ref: '#/components/schemas/SegmentCount'
+        wordcount:
+          $ref: '#/components/schemas/WordCount'
+      example:
+        id: 532352e85e0049.37076692
+        name: File 1.mqxliff
+        source_language: pt-pt
+        target_language: it
+        project: 5
+        status: translated
+        segment_count:
+          total: 32
+          new: 16
+          globalese: 16
+        wordcount:
+          total: 128
+          new: 64
+          globalese: 64
+    TranslationFileCollection:
+      type: array
+      items:
+        $ref: '#/components/schemas/TranslationFile'
+      example:
+        - id: 532352e85e0049.37076692
+          name: File 1.mqxliff
+          source_language: pt-pt
+          target_language: it
+          project: 5
+          status: translated
+          segment_count:
+            total: 32
+            new: 16
+            globalese: 16
+          wordcount:
+            total: 128
+            new: 64
+            globalese: 64
+        - id: 53aadc4487a8a9.27387893
+          name: File 2.sdlxliff
+          source_language: es-es
+          target_language: en-us
+          project: 6
+          status: queued
+          segment_count:
+            total: 332
+            new: 146
+            globalese: 0
+          wordcount:
+            total: 1728
+            new: 654
+            globalese: 0
+        - id: 53aadc4c08b863.74000237
+          name: File 3.mxliff
+          source_language: es-es
+          target_language: en-us
+          project: 6
+          status: new
+          segment_count:
+            total: 376
+            new: 3358
+            globalese: 0
+          wordcount:
+            total: 6635
+            new: 36889
+            globalese: 0
+    createTranslationFile:
+      type: object
+      required:
+        - project
+        - name
+        - source-language
+        - target-language
+      properties:
+        project:
+          type: integer
+        name:
+          type: string
+          description: |
+            **Note:** It is important to include the correct extension.
+            Globalese needs this information to decide how to parse a file when it is uploaded in a `POST translation-files/{id}` request.
+        source-language:
+          type: string
+        target-language:
+          type: string
+      example:
+        project: 3
+        name: New file.xliff
+        source-language: en
+        target-language: es
+    SegmentCount:
+      type: object
+      required:
+        - total
+        - new
+        - globalese
+      properties:
+        total:
+          type: integer
+        new:
+          type: integer
+        globalese:
+          type: integer
+    WordCount:
+      type: object
+      required:
+        - total
+        - new
+        - globalese
+      properties:
+        total:
+          type: integer
+        new:
+          type: integer
+        globalese:
+          type: integer
+    User:
+      type: object
+      required:
+        - id
+        - username
+        - name
+        - email
+        - groups
+        - active
+      properties:
+        id:
+          type: integer
+        active:
+          type: boolean
+        email:
+          type: string
+        groups:
+          type: array
+          items:
+            type: integer
+        name:
+          type: string
+        username:
+          type: string
+      example:
+        id: 1
+        active: true
+        groups: [1, 3, 4]
+        email: john.doe@globalese.com
+        name: John Doe
+        username: john.doe
+    UserCollection:
+      type: array
+      items:
+        $ref: '#/components/schemas/User'
+      example:
+        - id: 1
+          active: true
+          email: john.doe@globalese.com
+          groups: [1, 3, 4]
+          name: John Doe
+          username: john.doe
+        - id: 2
+          active: true
+          email: jane.doe@globalese.com
+          groups: [1, 3]
+          name: Jane Doe
+          username: jane.doe
+        - id: 3
+          active: true
+          email: andrew.smith@globalese.com
+          groups: [3]
+          name: andrew.smith
+          username: Andrew Smith
+  parameters:
+    engineId:
+      name: engine
+      in: query
+      description: |
+        Engine ID for filtering.
+        Examples: `1`, `2`
+      schema:
+        type: integer
+    engineStatus:
+      name: status
+      in: query
+      description: Engine status.
+      schema:
+        type: string
+        enum:
+          - changed
+          - empty
+          - error
+          - queued
+          - trained
+          - training
+    fileStatus:
+      name: status
+      in: query
+      description: Translation file status.
+      schema:
+        type: string
+        enum:
+          - empty
+          - new
+          - queued
+          - translating
+          - translated
+    groups:
+      name: groups
+      in: query
+      description: |
+        Group ID(s) for filtering.
+        Examples: `1`, `1,3,5`
+      schema:
+        type: array
+        items:
+          type: integer
+        minItems: 1
+    languageCode:
+      name: code
+      in: query
+      description: |
+        Language code as used by a CAT tool.
+        Must be used together with `tool`.
+      example: eng
+      schema:
+        type: string
+    languageTool:
+      name: tool
+      in: query
+      description: |
+        CAT tool for looking up a language code in Globalese.
+        Must be used together with `code`.
+      example: memoq
+      schema:
+        type: string
+        enum:
+          - memoq
+          - xtm
+    languageUsage:
+      name: usage
+      in: query
+      description: |
+        Filter for languages used in corpora, engines or projects.
+
+        Optionally, the `:source` or `:target` modifier may be appended to the parameter value to filter for languages used on the source or target language side only.
+
+        `usage=corpora:source` will return a list of languages used as corpus source languages.
+
+        `usage=engines` will return a list of languages used as engine languages, either source or target.
+      schema:
+        type: string
+        enum:
+          - archived_engines
+          - corpora
+          - engines
+          - projects
+    limit:
+      name: limit
+      in: query
+      description: |
+        Limit for results. *May* be used together with `offset`.
+        Examples: `25`, `50`
+      schema:
+        type: integer
+    metadataClient:
+      name: client
+      in: query
+      description: |
+        Client metadata descriptor.
+        Examples: `Very Important Client`
+      schema:
+        type: string
+    metadataDescription:
+      name: description
+      in: query
+      description: |
+        Description metadata descriptor.
+        Examples: `used for 2018 campaign`
+      schema:
+        type: string
+    metadataDomain:
+      name: domain
+      in: query
+      description: |
+        Domain metadata descriptor.
+        Examples: `legal`
+      schema:
+        type: string
+    metadataProject:
+      name: project
+      in: query
+      description: |
+        Project metadata descriptor.
+        Examples: `0192 EC Project`
+      schema:
+        type: string
+    metadataSubject:
+      name: subject
+      in: query
+      description: |
+        Subject metadata descriptor.
+        Examples: `EU treaties`
+      schema:
+        type: string
+    offset:
+      name: offset
+      in: query
+      description: |
+        Offset to start query from. **Must** be used together with `limit`.
+        Examples: `50`, `100`
+      schema:
+        type: integer
+    permissions:
+      name: permissions
+      in: query
+      description: |
+        Filter results by one or more permissions the user has in a group.
+
+        Examples: `corpora`, `engines,projects`
+      schema:
+        type: string
+        enum:
+          - corpora
+          - engines
+          - projects
+    projectId:
+      name: project
+      in: query
+      description: |
+        Project ID.
+        Examples: `1`, `2`
+      schema:
+        type: string
+    source:
+      name: source
+      in: query
+      description: |
+        Source language.
+        Examples: `en`, `fr`
+      schema:
+        type: string
+    target:
+      name: target
+      in: query
+      description: |
+        Target language.
+        Examples: `en`, `fr`
+      schema:
+        type: string
+  requestBodies:
+    createCorpus:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/createCorpus'
+      required: true
+    updateCorpus:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/updateCorpus'
+      required: true
+    mergeCorpora:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/mergeCorpora'
+      required: true
+    createEngine:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/createEngine'
+      required: true
+    updateEngine:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/updateEngine'
+      required: true
+    createProject:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/createProject'
+      required: true
+    cloneProject:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/cloneProject'
+      required: true
+    updateProject:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/updateProject'
+      required: true
+    createTranslationFile:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/createTranslationFile'
+      required: true
+  responses:
+    200OK:
+      description: Success
+    202Accepted:
+      description: Accepted
+    204NoContent:
+      description: No Content
+    400BadRequest:
+      description: Bad Request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    401Unauthorized:
+      description: Unauthorized
+    403Forbidden:
+      description: Insufficient user permissions
+    404NotFound:
+      description: Entity not found (invalid ID)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    500InternalServerError:
+      description: Internal server error while processing the request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    502BadGateway:
+      description: Bad Gateway
+  securitySchemes:
+    basic:
+      type: http
+      description: Username and corresponding API key
+      scheme: basic

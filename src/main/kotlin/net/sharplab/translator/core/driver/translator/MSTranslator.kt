@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import net.sharplab.translator.app.service.AsciiDocPoTranslatorAppServiceImpl
 import okhttp3.*
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.RequestBody.Companion.toRequestBody
 import org.jboss.logging.Logger
 import java.time.Duration
 
@@ -45,9 +47,9 @@ class MSTranslator(private val subscriptionKey: String, private val location: St
                 .addQueryParameter("includeSentenceLength", "true")
                 .addQueryParameter("allowFallback", "false")
                 .build()
-        val mediaType = MediaType.parse("application/json")
+        val mediaType = "application/json".toMediaTypeOrNull()
         val bodyString = objectMapper.writeValueAsString(texts.map { text -> mapOf("text" to text)})
-        val body = RequestBody.create(mediaType, bodyString)
+        val body = bodyString.toRequestBody(mediaType)
         val request = Request.Builder()
                 .url(url)
                 .post(body)
@@ -56,7 +58,7 @@ class MSTranslator(private val subscriptionKey: String, private val location: St
                 .addHeader("Content-type", "application/json")
                 .build()
         val response = client.newCall(request).execute()
-        val translateResponse = objectMapper.readValue<TranslateResponse>(response.body()?.string(), TranslateResponse::class.java)
+        val translateResponse = objectMapper.readValue<TranslateResponse>(response.body?.string(), TranslateResponse::class.java)
         return translateResponse.map { sentence -> sentence.translations.first().text }
     }
 

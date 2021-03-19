@@ -4,6 +4,6 @@ import java.io.File
 
 interface AsciiDocPoTranslatorAppService {
 
-    fun translateAsciiDocPoFile(filePath: File, srcLang: String, dstLang: String);
+    fun translateAsciiDocPoFile(filePath: File, srcLang: String, dstLang: String, isAsciidoctor: Boolean = true)
 
 }

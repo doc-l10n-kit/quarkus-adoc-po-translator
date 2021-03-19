@@ -7,6 +7,14 @@ import javax.enterprise.context.Dependent
 class AsciiDocPoTranslatorSetting {
     @ConfigProperty(name = "translator.engine")
     var engine: String? = null
+    @ConfigProperty(name = "translator.globalese.endpoint")
+    var globaleseEndpoint: String? = null
+    @ConfigProperty(name = "translator.globalese.username")
+    var globaleseUsername: String? = null
+    @ConfigProperty(name = "translator.globalese.apiKey")
+    var globaleseApiKey: String? = null
+    @ConfigProperty(name = "translator.globalese.projectId")
+    var globaleseProjectId: Int? = null
     @ConfigProperty(name = "translator.deepL.apiKey")
     var deepLApiKey: String? = null
     @ConfigProperty(name = "translator.msTranslator.subscriptionKey")

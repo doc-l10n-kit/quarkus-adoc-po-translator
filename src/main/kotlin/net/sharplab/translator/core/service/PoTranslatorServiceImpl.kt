@@ -14,7 +14,7 @@ class PoTranslatorServiceImpl(private val translator: Translator) : PoTranslator
     private val logger = Logger.getLogger(PoTranslatorServiceImpl::class.java)
     private val messageProcessor = AsciidoctorMessageProcessor()
 
-    override fun translate(poFile: PoFile, srcLang: String, dstLang: String): PoFile {
+    override fun translate(poFile: PoFile, srcLang: String, dstLang: String, isAsciidoctor: Boolean): PoFile {
         val messages = poFile.messages
         val translationTargets = messages.filter{ requiresTranslation(it)}
 
@@ -22,19 +22,24 @@ class PoTranslatorServiceImpl(private val translator: Translator) : PoTranslator
         val nonBlogHeaderMessages = translationTargets.filterNot { isBlogHeader(it) }
 
         translateBlogHeaders(blogHeaderMessages, srcLang, dstLang)
-        translateMessages(nonBlogHeaderMessages, srcLang, dstLang)
+        translateMessages(nonBlogHeaderMessages, srcLang, dstLang, isAsciidoctor)
 
         return PoFile(messages)
     }
 
-    private fun translate(messages: List<String>, srcLang: String, dstLang: String): List<String> {
-        val preProcessedMessages = messages.map { messageProcessor.preProcess(it) }
-        val processedMessages = translator.translate(preProcessedMessages, srcLang, dstLang)
-        return processedMessages.map { messageProcessor.postProcess(it) }
+    private fun translate(messages: List<String>, srcLang: String, dstLang: String, isAsciidoctor: Boolean): List<String> {
+        return if(isAsciidoctor){
+            val preProcessedMessages = messages.map { messageProcessor.preProcess(it) }
+            val processedMessages = translator.translate(preProcessedMessages, srcLang, dstLang)
+            processedMessages.map { messageProcessor.postProcess(it) }
+        }
+        else{
+            translator.translate(messages, srcLang, dstLang)
+        }
     }
 
-    private fun translateMessages(messages: List<PoMessage>, srcLang: String, dstLang: String){
-        val translatedStrings = translate(messages.map { it.messageId }, srcLang, dstLang)
+    private fun translateMessages(messages: List<PoMessage>, srcLang: String, dstLang: String, isAsciidoctor: Boolean){
+        val translatedStrings = translate(messages.map { it.messageId }, srcLang, dstLang, isAsciidoctor)
         translatedStrings.forEachIndexed { index, item -> messages[index].also {
             if(item.isNotEmpty()){
                 it.messageString = item
