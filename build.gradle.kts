@@ -16,7 +16,7 @@ val quarkusPlatformVersion: String by project
 val quarkusAdocPoTranslatorVersion: String by project
 
 dependencies {
-    implementation("org.threeten:threetenbp:1.4.0")
+    implementation("org.threeten:threetenbp:1.6.0")
     implementation("com.squareup.okhttp3:okhttp")
     implementation("org.fedorahosted.tennera:jgettext:0.15.1")
     implementation("org.asciidoctor:asciidoctorj:2.4.2")
