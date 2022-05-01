@@ -2,7 +2,7 @@ plugins {
     kotlin("jvm") version "1.3.72"
     kotlin("plugin.allopen") version "1.3.72"
     id("io.quarkus")
-    id("org.openapi.generator") version "5.0.0"
+    id("org.openapi.generator") version "5.4.0"
 }
 
 repositories {
