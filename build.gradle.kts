@@ -1,8 +1,7 @@
 plugins {
     kotlin("jvm") version "1.6.21"
     kotlin("plugin.allopen") version "1.6.21"
-    id("io.quarkus")
-    id("org.openapi.generator") version "5.4.0"
+    id("io.quarkus") version "2.8.2.Final"
 }
 
 repositories {
@@ -13,13 +12,12 @@ repositories {
 val quarkusPlatformGroupId: String by project
 val quarkusPlatformArtifactId: String by project
 val quarkusAdocPoTranslatorVersion: String by project
-val quarkusPlatformVersion = "1.10.5.Final"
 val jgettextVersion = "0.15.1"
 val asciidoctorjVersion = "2.5.3"
 val jsoupVersion = "1.13.1"
 
 dependencies {
-    implementation(platform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}"))
+    implementation(platform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:2.8.2.Final"))
     implementation("io.quarkus:quarkus-rest-client-jackson")
     implementation("io.quarkus:quarkus-picocli")
     implementation("io.quarkus:quarkus-kotlin")
@@ -35,7 +33,7 @@ dependencies {
 
     testImplementation("io.quarkus:quarkus-junit5")
     testImplementation("org.mockito:mockito-junit-jupiter")
-    testImplementation("org.assertj:assertj-core")
+    testImplementation("org.assertj:assertj-core:3.22.0")
 }
 
 group = "net.sharplab.translator"
@@ -59,14 +57,4 @@ allOpen {
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
     kotlinOptions.jvmTarget = JavaVersion.VERSION_11.toString()
     kotlinOptions.javaParameters = true
-}
-
-tasks.withType<org.openapitools.generator.gradle.plugin.tasks.GenerateTask>{
-    this.generatorName.set("kotlin")
-    this.inputSpec.set("$rootDir/src/main/resources/globalese.openapi.yml")
-    this.outputDir.set("$buildDir/generated/openapi")
-    this.apiPackage.set("net.sharplab.translator.generated.api")
-    this.invokerPackage.set("net.sharplab.translator.generated.invoker")
-    this.modelPackage.set("net.sharplab.translator.generated.model")
-    this.configOptions.set(mapOf("dateLibrary" to "java8"))
 }
