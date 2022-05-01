@@ -19,7 +19,7 @@ dependencies {
     implementation("org.threeten:threetenbp:1.4.0")
     implementation("com.squareup.okhttp3:okhttp")
     implementation("org.fedorahosted.tennera:jgettext:0.15.1")
-    implementation("org.asciidoctor:asciidoctorj:2.4.2")
+    implementation("org.asciidoctor:asciidoctorj:2.5.3")
     implementation("org.jsoup:jsoup:1.13.1")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("javax.xml.bind:jaxb-api:2.3.1")
