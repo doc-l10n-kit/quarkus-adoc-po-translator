@@ -27,7 +27,7 @@ dependencies {
     implementation(platform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}"))
     implementation("com.squareup.okhttp3:okhttp:4.9.3")
     implementation("com.squareup.moshi:moshi-kotlin:1.9.2")
-    implementation("com.squareup.moshi:moshi-adapters:1.9.2")
+    implementation("com.squareup.moshi:moshi-adapters:1.13.0")
     implementation("io.quarkus:quarkus-rest-client-jackson")
     implementation("io.quarkus:quarkus-picocli")
     implementation("io.quarkus:quarkus-kotlin")
