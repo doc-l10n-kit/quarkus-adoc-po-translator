@@ -12,8 +12,8 @@ repositories {
 
 val quarkusPlatformGroupId: String by project
 val quarkusPlatformArtifactId: String by project
-val quarkusPlatformVersion: String by project
 val quarkusAdocPoTranslatorVersion: String by project
+val quarkusPlatformVersion = "1.10.5.Final"
 val jgettextVersion = "0.15.1"
 val asciidoctorjVersion = "2.5.3"
 val jsoupVersion = "1.13.1"
