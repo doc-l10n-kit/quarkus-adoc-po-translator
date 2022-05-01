@@ -25,7 +25,7 @@ dependencies {
     implementation("javax.xml.bind:jaxb-api:2.3.1")
 
     implementation(platform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}"))
-    implementation("com.squareup.okhttp3:okhttp:4.2.2")
+    implementation("com.squareup.okhttp3:okhttp:4.9.3")
     implementation("com.squareup.moshi:moshi-kotlin:1.9.2")
     implementation("com.squareup.moshi:moshi-adapters:1.9.2")
     implementation("io.quarkus:quarkus-rest-client-jackson")
