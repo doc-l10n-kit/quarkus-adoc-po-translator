@@ -14,13 +14,11 @@ val quarkusPlatformGroupId: String by project
 val quarkusPlatformArtifactId: String by project
 val quarkusPlatformVersion: String by project
 val quarkusAdocPoTranslatorVersion: String by project
+val jgettextVersion = "0.15.1"
+val asciidoctorjVersion = "2.5.3"
+val jsoupVersion = "1.13.1"
 
 dependencies {
-    implementation("org.fedorahosted.tennera:jgettext:0.15.1")
-    implementation("org.asciidoctor:asciidoctorj:2.5.3")
-    implementation("org.jsoup:jsoup:1.13.1")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
-
     implementation(platform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}"))
     implementation("io.quarkus:quarkus-rest-client-jackson")
     implementation("io.quarkus:quarkus-picocli")
@@ -30,6 +28,10 @@ dependencies {
     implementation("io.quarkus:quarkus-arc")
     implementation("io.quarkus:quarkus-resteasy")
 
+    implementation("org.fedorahosted.tennera:jgettext:${jgettextVersion}")
+    implementation("org.asciidoctor:asciidoctorj:${asciidoctorjVersion}")
+    implementation("org.jsoup:jsoup:${jsoupVersion}")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
 
     testImplementation("io.quarkus:quarkus-junit5")
     testImplementation("org.mockito:mockito-junit-jupiter")
