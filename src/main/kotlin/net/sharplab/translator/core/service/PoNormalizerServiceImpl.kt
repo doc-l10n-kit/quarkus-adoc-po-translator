@@ -56,7 +56,7 @@ class PoNormalizerServiceImpl : PoNormalizerService {
 
     fun normalize(element: Element){
         if(element.tagName() == "span" && element.classNames().contains("image")){
-            val imgTag = element.selectFirst("img")
+            val imgTag = element.selectFirst("img")!!
             val src = imgTag.attr("src")
             val attrs = imgTag.attributes().filter { attr -> attr.key != "src" }
             val attrsText = attrs.joinToString(", ") { "%s=\"%s\"".format(it.key, it.value) }

@@ -11,7 +11,7 @@ class ImageTagPostProcessor : TagPostProcessor {
 
     private fun replaceImage(element: Element) {
         if(element.tagName() == "span" && element.classNames().contains("image")){
-            val imgTag = element.selectFirst("img")
+            val imgTag = element.selectFirst("img")!!
             val src = imgTag.attr("src")
             val alt = imgTag.attr("alt")
             var imageText = "image:%s[alt=%s]".format(src, alt)
