@@ -6,8 +6,6 @@ import javax.enterprise.context.Dependent
 
 @Dependent
 class AsciiDocPoTranslatorSetting {
-    @ConfigProperty(name = "translator.engine")
-    var engine: String = "deepL"
     @ConfigProperty(name = "translator.deepL.apiKey")
     var deepLApiKey: Optional<String> = Optional.empty()
     @ConfigProperty(name = "translator.language.source", defaultValue = "en")

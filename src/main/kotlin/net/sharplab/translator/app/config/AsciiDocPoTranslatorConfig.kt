@@ -3,7 +3,6 @@ package net.sharplab.translator.app.config
 import net.sharplab.translator.app.setting.AsciiDocPoTranslatorSetting
 import net.sharplab.translator.core.driver.translator.DeepLTranslator
 import net.sharplab.translator.core.driver.translator.Translator
-import java.util.*
 import javax.enterprise.context.Dependent
 import javax.enterprise.inject.Produces
 
@@ -13,12 +12,7 @@ class AsciiDocPoTranslatorConfig(private val asciiDocPoTranslatorSetting: AsciiD
     @Produces
     fun translator(): Translator
     {
-        return when (asciiDocPoTranslatorSetting.engine.lowercase()){
-            "deepL".lowercase() -> {
-                val deepLApiKey = asciiDocPoTranslatorSetting.deepLApiKey
-                DeepLTranslator(deepLApiKey.get())
-            }
-            else -> throw RuntimeException("Configuration 'translator.engine' must be 'deepL' or 'msTranslator'.")
-        }
+        val deepLApiKey = asciiDocPoTranslatorSetting.deepLApiKey
+        return DeepLTranslator(deepLApiKey.get())
     }
 }
