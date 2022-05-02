@@ -1,6 +1,7 @@
 package net.sharplab.translator.core.processor
 
 import org.jsoup.nodes.Element
+import org.jsoup.nodes.Node
 import org.jsoup.nodes.TextNode
 
 class ImageTagPostProcessor : TagPostProcessor {
@@ -13,18 +14,21 @@ class ImageTagPostProcessor : TagPostProcessor {
         if(element.tagName() == "span" && element.classNames().contains("image")){
             val imgTag = element.selectFirst("img")!!
             val src = imgTag.attr("src")
-            val alt = imgTag.attr("alt")
-            var imageText = "image:%s[alt=%s]".format(src, alt)
+            val attrs = imgTag.attributes().filterNot { attr -> attr.key == "src" }
+            val attrsText = attrs.joinToString(separator = ", ")
+            var imageText = "image:%s[%s]".format(src, attrsText)
 
-            val prev =element.previousSibling()
-            val next =element.nextSibling()
+            val prev : Node? = element.previousSibling()
+            val next : Node? = element.nextSibling()
+            val isPrevExists = prev != null
+            val isNextExists = next != null
             val isPrevSpaced= prev is TextNode && prev.text().endsWith(" ")
             val isNextSpaced= next is TextNode && next.text().startsWith(" ")
 
-            if(!isPrevSpaced){
+            if(isPrevExists && !isPrevSpaced){
                 imageText = " $imageText"
             }
-            if(!isNextSpaced){
+            if(isNextExists && !isNextSpaced){
                 imageText = "$imageText "
             }
             element.replaceWith(TextNode(imageText))

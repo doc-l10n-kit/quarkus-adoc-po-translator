@@ -14,7 +14,6 @@ internal class AsciidoctorMessageProcessorTest {
         assertThat(messageString).isEqualTo("This is a <a href=\"https://github.com/webauthn4j\">link</a>, to <em>webauthn4j</em> GitHub org.")
     }
 
-    @Disabled
     @Test
     fun postProcess_decorationTag_test(){
         val messageString = target.postProcess("これは、<em>webauthn4j</em>GitHub組織への<a href=\"https://github.com/webauthn4j\" window=\"_blank\">リンク</a>です。")
@@ -57,7 +56,6 @@ internal class AsciidoctorMessageProcessorTest {
         assertThat(result).isEqualTo("<span class=\"image\"><img src=\"quarkus-reactive-stack.png\" alt=\"Quarkus is based on a reactive engine\" width=\"50%\"></span>")
     }
 
-    @Disabled
     @Test
     fun postProcess_imageTag(){
         val result = target.postProcess("<span class=\"image\"><img src=\"quarkus-reactive-stack.png\" alt=\"Quarkus is based on a reactive engine\" width=\"50%\"></span>")
@@ -70,7 +68,6 @@ internal class AsciidoctorMessageProcessorTest {
         assertThat(result).isEqualTo("(&gt;_&lt;)")
     }
 
-    @Disabled
     @Test
     fun postProcess(){
         val result = target.postProcess("<code>(&gt;_&lt;)</code>")

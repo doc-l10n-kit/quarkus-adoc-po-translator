@@ -1,6 +1,7 @@
 package net.sharplab.translator.core.processor
 
 import org.jsoup.nodes.Element
+import org.jsoup.nodes.Node
 import org.jsoup.nodes.TextNode
 
 class LinkTagPostProcessor : TagPostProcessor{
@@ -19,22 +20,24 @@ class LinkTagPostProcessor : TagPostProcessor{
             else {
                 val url = element.attr("href")
                 val text = element.text()
-                var attrsText = ""
-                val attrs = element.attributes().filter { attr -> attr.key != "href" }.filterNot { attr -> attr.key == "rel" && attr.value == "noopener" }
-                for (attr in attrs) {
-                    attrsText += ", %s=%s".format(mapAttrKey(attr.key), attr.value)
+                val attrs = element.attributes().filterNot { attr -> attr.key == "href" }.filterNot { attr -> attr.key == "rel" && attr.value == "noopener" }
+                val attrsText: String = attrs.joinToString(separator = ", ")
+                var linkText = when {
+                    attrs.isEmpty() -> "link:%s[%s]".format(url, text)
+                    else -> "link:%s[%s, %s]".format(url, text, attrsText)
                 }
-                var linkText = "link:%s[%s%s]".format(url, text, attrsText)
 
-                val prev =element.previousSibling()
-                val next =element.nextSibling()
+                val prev : Node? = element.previousSibling()
+                val next : Node? = element.nextSibling()
+                val isPrevExists = prev != null
+                val isNextExists = next != null
                 val isPrevSpaced= prev is TextNode && prev.text().endsWith(" ")
                 val isNextSpaced= next is TextNode && next.text().startsWith(" ")
 
-                if(!isPrevSpaced){
+                if(isPrevExists && !isPrevSpaced){
                     linkText = " $linkText"
                 }
-                if(!isNextSpaced){
+                if(isNextExists && !isNextSpaced){
                     linkText = "$linkText "
                 }
                 element.replaceWith(TextNode(linkText))

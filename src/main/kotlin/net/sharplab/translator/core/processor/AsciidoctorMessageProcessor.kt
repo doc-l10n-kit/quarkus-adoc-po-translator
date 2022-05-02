@@ -30,7 +30,17 @@ class AsciidoctorMessageProcessor {
         DecorationTagPostProcessor("subscript", "~", "~").postProcess(body)
         LinkTagPostProcessor().postProcess(body)
         ImageTagPostProcessor().postProcess(body)
-        return body.text()
+        val wholeText = body.wholeText()
+        return unescapeCharacterReference(wholeText)
+    }
+
+    private fun unescapeCharacterReference(str: String): String{
+        return str
+                .replace("&amp;", "&")
+                .replace("&lt;", "<")
+                .replace("&gt;", ">")
+                .replace("&quot;", "\"")
+                .replace("&apos;", "'")
     }
 
 }
