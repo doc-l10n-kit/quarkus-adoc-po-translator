@@ -1,5 +1,9 @@
 package net.sharplab.translator.core.driver.translator
 
+import net.sharplab.deepl4j.DeepLApi
+import net.sharplab.deepl4j.DeepLApiFactory
+import net.sharplab.deepl4j.client.ApiException
+import net.sharplab.deepl4j.model.Translations
 import org.eclipse.microprofile.rest.client.RestClientBuilder
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl
 import java.net.URI
@@ -7,30 +11,32 @@ import javax.enterprise.context.Dependent
 import javax.ws.rs.WebApplicationException
 import javax.ws.rs.core.MultivaluedMap
 
-class DeepLTranslator(private val apiKey: String) : Translator {
+class DeepLTranslator(apiKey: String) : Translator {
+
+    private val deepLApi : DeepLApi = DeepLApiFactory().create(apiKey);
+
+    init {
+        deepLApi.apiClient.servers.first().URL = "https://api.deepl.com"
+    }
+
     override fun translate(texts: List<String>, srcLang: String, dstLang: String): List<String> {
         if (texts.isEmpty()) {
             return emptyList()
         }
-        val map: MultivaluedMap<String, String> = MultivaluedMapImpl()
-        map.add("auth_key", apiKey)
-        map.add("source_lang", srcLang)
-        map.add("target_lang", dstLang)
-        map.add("non_splitting_tags", java.lang.String.join(",", INLINE_ELEMENT_NAMES))
-        map.add("ignore_tags", java.lang.String.join(",", IGNORE_ELEMENT_NAMES))
-        map.add("tag_handling", "xml")
-        for (text in texts) {
-            map.add("text", text)
-        }
-        val response: DeepLTranslateAPIResponse
+
+        val nonSplittingTags = java.lang.String.join(",", INLINE_ELEMENT_NAMES)
+        val ignoreTags = java.lang.String.join(",", IGNORE_ELEMENT_NAMES)
+        val translations: Translations
         try {
-            val deepLClient = RestClientBuilder.newBuilder().baseUri(URI.create("https://api.deepl.com")).build(DeepLClient::class.java)
-            response = deepLClient.translate(map)
-        } catch (e: WebApplicationException) {
-            val message = String.format("%d error is thrown: %s", e.response.status, e.response.readEntity(String::class.java))
+            translations = when (texts.size) {
+                1 -> deepLApi.translateText(texts.first(), srcLang, dstLang, null, null, null, null, "xml", nonSplittingTags, null, null, ignoreTags)
+                else -> deepLApi.translateTexts(texts, srcLang, dstLang, null, null, null, null, "xml", nonSplittingTags, null, null, ignoreTags)
+            }
+        } catch (e: ApiException) {
+            val message = String.format("%d error is thrown: %s", e.code, e.responseBody)
             throw DeepLTranslatorException(message, e)
         }
-        return response.translations.map(DeepLTranslateAPIResponse.Translation::text)
+        return translations.translations.map{ it.text }
     }
 
     companion object {
@@ -40,10 +46,6 @@ class DeepLTranslator(private val apiKey: String) : Translator {
          * インライン要素のタグリスト
          */
         val INLINE_ELEMENT_NAMES = listOf("a", "abbr", "b", "bdi", "bdo", "br", "cite", "code", "data", "dfn", "em", "i", "kbd", "mark", "q", "rp", "rt", "rtc", "ruby", "s", "samp", "small", "span", "strong", "sub", "sup", "time", "u", "var", "wbr")
-        /**
-         * 翻訳除外要素のリスト
-         */
-        val EXCLUDED_ELEMENT_NAMES = listOf("head", "pre", "tt")
     }
 
 }

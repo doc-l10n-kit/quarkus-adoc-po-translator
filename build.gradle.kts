@@ -7,11 +7,13 @@ plugins {
 repositories {
     mavenLocal()
     mavenCentral()
+    maven { url = uri("https://jitpack.io") }
 }
 
 val quarkusPlatformGroupId: String by project
 val quarkusPlatformArtifactId: String by project
 val quarkusAdocPoTranslatorVersion: String by project
+val deepl4jVersion = "0.1.2.RELEASE"
 val jgettextVersion = "0.15.1"
 val asciidoctorjVersion = "2.5.3"
 val jsoupVersion = "1.14.3"
@@ -26,6 +28,9 @@ dependencies {
     implementation("io.quarkus:quarkus-arc")
     implementation("io.quarkus:quarkus-resteasy")
 
+    implementation("com.github.sharplab:deepl4j:${deepl4jVersion}"){
+        exclude("jakarta.annotation", "jakarta.annotation-api")
+    }
     implementation("org.fedorahosted.tennera:jgettext:${jgettextVersion}")
     implementation("org.asciidoctor:asciidoctorj:${asciidoctorjVersion}")
     implementation("org.jsoup:jsoup:${jsoupVersion}")
