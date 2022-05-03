@@ -16,7 +16,7 @@ class DeepLTranslator(apiKey: String) : Translator {
     private val deepLApi : DeepLApi = DeepLApiFactory().create(apiKey);
 
     init {
-        deepLApi.apiClient.servers.first().URL = "https://api.deepl.com"
+        deepLApi.apiClient.servers.first().URL = "https://api.deepl.com/v2/"
     }
 
     override fun translate(texts: List<String>, srcLang: String, dstLang: String): List<String> {
