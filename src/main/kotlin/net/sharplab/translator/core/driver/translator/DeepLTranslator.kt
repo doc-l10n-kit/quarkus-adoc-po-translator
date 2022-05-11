@@ -3,13 +3,6 @@ package net.sharplab.translator.core.driver.translator
 import net.sharplab.deepl4j.DeepLApi
 import net.sharplab.deepl4j.DeepLApiFactory
 import net.sharplab.deepl4j.client.ApiException
-import net.sharplab.deepl4j.model.Translations
-import org.eclipse.microprofile.rest.client.RestClientBuilder
-import org.jboss.resteasy.specimpl.MultivaluedMapImpl
-import java.net.URI
-import javax.enterprise.context.Dependent
-import javax.ws.rs.WebApplicationException
-import javax.ws.rs.core.MultivaluedMap
 
 class DeepLTranslator(apiKey: String) : Translator {
 
@@ -26,21 +19,33 @@ class DeepLTranslator(apiKey: String) : Translator {
 
         val nonSplittingTags = java.lang.String.join(",", INLINE_ELEMENT_NAMES)
         val ignoreTags = java.lang.String.join(",", IGNORE_ELEMENT_NAMES)
-        val translations: Translations
-        try {
-            translations = when (texts.size) {
-                1 -> deepLApi.translateText(texts.first(), srcLang, dstLang, null, null, null, null, "xml", nonSplittingTags, null, null, ignoreTags)
-                else -> deepLApi.translateTexts(texts, srcLang, dstLang, null, null, null, null, "xml", nonSplittingTags, null, null, ignoreTags)
+
+        val results = ArrayList<String>()
+        val textsBuffer = ArrayList<String>()
+        texts.forEach { text ->
+            if(textsBuffer.sumOf { it.length } + text.length > MAX_REQUESTABLE_TEXT_LENGTH){
+                try {
+                    val translations = when (textsBuffer.size) {
+                        1 -> deepLApi.translateText(textsBuffer.first(), srcLang, dstLang, null, null, null, null, "xml", nonSplittingTags, null, null, ignoreTags)
+                        else -> deepLApi.translateTexts(textsBuffer, srcLang, dstLang, null, null, null, null, "xml", nonSplittingTags, null, null, ignoreTags)
+                    }
+                    results.addAll(translations.translations.map { translation -> translation.text })
+                } catch (e: ApiException) {
+                    val message = String.format("%d error is thrown: %s", e.code, e.responseBody)
+                    throw DeepLTranslatorException(message, e)
+                }
+                textsBuffer.clear()
             }
-        } catch (e: ApiException) {
-            val message = String.format("%d error is thrown: %s", e.code, e.responseBody)
-            throw DeepLTranslatorException(message, e)
+
+            textsBuffer.add(text)
         }
-        return translations.translations.map{ it.text }
+        return results.toList()
     }
 
     companion object {
-        private val IGNORE_ELEMENT_NAMES = java.util.List.of("abbr", "b", "cite", "code", "data", "dfn", "kbd", "rp", "rt", "rtc", "ruby", "samp", "time", "var")
+        private const val MAX_REQUESTABLE_TEXT_LENGTH = 1000
+
+        private val IGNORE_ELEMENT_NAMES = listOf("abbr", "b", "cite", "code", "data", "dfn", "kbd", "rp", "rt", "rtc", "ruby", "samp", "time", "var")
 
         /**
          * インライン要素のタグリスト
