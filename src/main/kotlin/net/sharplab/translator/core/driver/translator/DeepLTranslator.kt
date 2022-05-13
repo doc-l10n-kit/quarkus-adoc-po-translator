@@ -3,6 +3,7 @@ package net.sharplab.translator.core.driver.translator
 import net.sharplab.deepl4j.DeepLApi
 import net.sharplab.deepl4j.DeepLApiFactory
 import net.sharplab.deepl4j.client.ApiException
+import net.sharplab.deepl4j.model.Translations
 
 class DeepLTranslator(apiKey: String) : Translator {
 
@@ -26,6 +27,7 @@ class DeepLTranslator(apiKey: String) : Translator {
             if(textsBuffer.sumOf { it.length } + text.length > MAX_REQUESTABLE_TEXT_LENGTH){
                 try {
                     val translations = when (textsBuffer.size) {
+                        0 -> Translations()
                         1 -> deepLApi.translateText(textsBuffer.first(), srcLang, dstLang, null, null, null, null, "xml", nonSplittingTags, null, null, ignoreTags)
                         else -> deepLApi.translateTexts(textsBuffer, srcLang, dstLang, null, null, null, null, "xml", nonSplittingTags, null, null, ignoreTags)
                     }
