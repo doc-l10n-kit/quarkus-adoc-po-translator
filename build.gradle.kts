@@ -16,7 +16,7 @@ val quarkusAdocPoTranslatorVersion: String by project
 val deepl4jVersion = "0.1.2.RELEASE"
 val jgettextVersion = "0.15.1"
 val asciidoctorjVersion = "2.5.3"
-val jsoupVersion = "1.14.3"
+val jsoupVersion = "1.15.1"
 
 dependencies {
     implementation(platform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:2.8.2.Final"))
