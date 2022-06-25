@@ -1,13 +1,11 @@
 package net.sharplab.translator.core.service
 
 import net.sharplab.translator.core.driver.translator.Translator
-import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.Test
 
 internal class PoTranslatorServiceImplTest{
 
     private val poTranslatorServiceImplTest = PoTranslatorServiceImpl(object : Translator {
-        override fun translate(texts: List<String>, srcLang: String, dstLang: String): List<String> {
+        override fun translate(texts: List<String>, srcLang: String, dstLang: String, glossaryId: String?): List<String> {
             TODO("not implemented")
         }
     })

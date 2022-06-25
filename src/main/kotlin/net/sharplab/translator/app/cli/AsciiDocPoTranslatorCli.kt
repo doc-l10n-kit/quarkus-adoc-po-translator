@@ -25,6 +25,8 @@ class AsciiDocPoTranslatorCli : QuarkusApplication {
         private var srcLang: String? = null
         @CommandLine.Option(order = 3, names = ["--dstLang"], description = ["destination language"])
         private var dstLang: String? = null
+        @CommandLine.Option(order = 4, names = ["--glossaryId"], description = ["glossary id"])
+        private var glossaryId: String? = null
         @CommandLine.Option(order = 4, names = ["--asciidoctor"], description = ["asciidoctor"])
         private var asciidoctor = true
         @CommandLine.Option(order = 9, names = ["--help", "-h"], description = ["print help"], usageHelp = true)
@@ -35,7 +37,7 @@ class AsciiDocPoTranslatorCli : QuarkusApplication {
             val resolvedSrcLang = srcLang ?: asciiDocPoTranslatorSetting.defaultSrcLang ?: throw IllegalArgumentException("srcLang must be provided")
             val resolvedDstLang = dstLang ?: asciiDocPoTranslatorSetting.defaultDstLang ?: throw IllegalArgumentException("dstLang must be provided")
             filePath.forEach {
-                asciiDocPoTranslatorAppService.translateAsciiDocPoFile(it, resolvedSrcLang, resolvedDstLang, asciidoctor)
+                asciiDocPoTranslatorAppService.translateAsciiDocPoFile(it, resolvedSrcLang, resolvedDstLang, asciidoctor, glossaryId)
             }
         }
 

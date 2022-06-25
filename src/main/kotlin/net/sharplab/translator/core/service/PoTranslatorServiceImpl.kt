@@ -14,32 +14,32 @@ class PoTranslatorServiceImpl(private val translator: Translator) : PoTranslator
     private val logger = Logger.getLogger(PoTranslatorServiceImpl::class.java)
     private val messageProcessor = AsciidoctorMessageProcessor()
 
-    override fun translate(poFile: PoFile, srcLang: String, dstLang: String, isAsciidoctor: Boolean): PoFile {
+    override fun translate(poFile: PoFile, srcLang: String, dstLang: String, isAsciidoctor: Boolean, glossaryId: String?): PoFile {
         val messages = poFile.messages
         val translationTargets = messages.filter{ requiresTranslation(it)}
 
         val blogHeaderMessages = translationTargets.filter { isBlogHeader(it) }
         val nonBlogHeaderMessages = translationTargets.filterNot { isBlogHeader(it) }
 
-        translateBlogHeaders(blogHeaderMessages, srcLang, dstLang)
-        translateMessages(nonBlogHeaderMessages, srcLang, dstLang, isAsciidoctor)
+        translateBlogHeaders(blogHeaderMessages, srcLang, dstLang, glossaryId)
+        translateMessages(nonBlogHeaderMessages, srcLang, dstLang, isAsciidoctor, glossaryId)
 
         return PoFile(messages)
     }
 
-    private fun translate(messages: List<String>, srcLang: String, dstLang: String, isAsciidoctor: Boolean): List<String> {
+    private fun translate(messages: List<String>, srcLang: String, dstLang: String, isAsciidoctor: Boolean, glossaryId: String?): List<String> {
         return if(isAsciidoctor){
             val preProcessedMessages = messages.map { messageProcessor.preProcess(it) }
-            val processedMessages = translator.translate(preProcessedMessages, srcLang, dstLang)
+            val processedMessages = translator.translate(preProcessedMessages, srcLang, dstLang, glossaryId)
             processedMessages.map { messageProcessor.postProcess(it) }
         }
         else{
-            translator.translate(messages, srcLang, dstLang)
+            translator.translate(messages, srcLang, dstLang, glossaryId)
         }
     }
 
-    private fun translateMessages(messages: List<PoMessage>, srcLang: String, dstLang: String, isAsciidoctor: Boolean){
-        val translatedStrings = translate(messages.map { it.messageId }, srcLang, dstLang, isAsciidoctor)
+    private fun translateMessages(messages: List<PoMessage>, srcLang: String, dstLang: String, isAsciidoctor: Boolean, glossaryId: String? = null){
+        val translatedStrings = translate(messages.map { it.messageId }, srcLang, dstLang, isAsciidoctor, glossaryId)
         translatedStrings.forEachIndexed { index, item -> messages[index].also {
             if(item.isNotEmpty()){
                 it.messageString = item
@@ -51,14 +51,14 @@ class PoTranslatorServiceImpl(private val translator: Translator) : PoTranslator
         } }
     }
 
-    private fun translateBlogHeaders(messages: List<PoMessage>, srcLang: String, dstLang: String){
+    private fun translateBlogHeaders(messages: List<PoMessage>, srcLang: String, dstLang: String, glossaryId: String? = null){
         messages.forEach { message ->
-            message.messageString = translateBlogHeader(message.messageId, srcLang, dstLang)
+            message.messageString = translateBlogHeader(message.messageId, srcLang, dstLang, glossaryId)
             message.fuzzy = true
         }
     }
 
-    private fun translateBlogHeader(message: String, srcLang: String, dstLang: String): String{
+    private fun translateBlogHeader(message: String, srcLang: String, dstLang: String, glossaryId: String?): String{
         val titleRegex = Regex("""^(title:)(.*)\n""", RegexOption.MULTILINE)
         val synopsisRegex = Regex("""^(synopsis:)(.*)\n""", RegexOption.MULTILINE)
         val titleFindResult = titleRegex.find(message)
@@ -71,7 +71,7 @@ class PoTranslatorServiceImpl(private val translator: Translator) : PoTranslator
         if(synopsisFindResult!=null){
             synopsis = synopsisFindResult.groupValues[2].trim()
         }
-        val translated = translator.translate(listOf(title, synopsis), srcLang, dstLang)
+        val translated = translator.translate(listOf(title, synopsis), srcLang, dstLang, glossaryId)
         val titleTranslated = translated[0]
         val synopsisTranslated = translated[1]
         var replaced = message
