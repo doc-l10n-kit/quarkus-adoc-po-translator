@@ -13,7 +13,7 @@ class DeepLTranslator(apiKey: String) : Translator {
         deepLApi.apiClient.servers.first().URL = "https://api.deepl.com/v2/"
     }
 
-    override fun translate(texts: List<String>, srcLang: String, dstLang: String): List<String> {
+    override fun translate(texts: List<String>, srcLang: String, dstLang: String, glossaryId: String?): List<String> {
         if (texts.isEmpty()) {
             return emptyList()
         }
@@ -28,8 +28,8 @@ class DeepLTranslator(apiKey: String) : Translator {
                 try {
                     val translations = when (textsBuffer.size) {
                         0 -> Translations()
-                        1 -> deepLApi.translateText(textsBuffer.first(), srcLang, dstLang, null, null, null, null, "xml", nonSplittingTags, null, null, ignoreTags)
-                        else -> deepLApi.translateTexts(textsBuffer, srcLang, dstLang, null, null, null, null, "xml", nonSplittingTags, null, null, ignoreTags)
+                        1 -> deepLApi.translateText(textsBuffer.first(), srcLang, dstLang, null, null, null, glossaryId, "xml", nonSplittingTags, null, null, ignoreTags)
+                        else -> deepLApi.translateTexts(textsBuffer, srcLang, dstLang, null, null, null, glossaryId, "xml", nonSplittingTags, null, null, ignoreTags)
                     }
                     results.addAll(translations.translations.map { translation -> translation.text })
                 } catch (e: ApiException) {
