@@ -38,7 +38,7 @@ dependencies {
 
     testImplementation("io.quarkus:quarkus-junit5")
     testImplementation("org.mockito:mockito-junit-jupiter")
-    testImplementation("org.assertj:assertj-core:3.22.0")
+    testImplementation("org.assertj:assertj-core:3.23.1")
 }
 
 group = "net.sharplab.translator"
