@@ -15,7 +15,7 @@ val quarkusPlatformArtifactId: String by project
 val quarkusAdocPoTranslatorVersion: String by project
 val deepl4jVersion = "0.1.2.RELEASE"
 val jgettextVersion = "0.15.1"
-val asciidoctorjVersion = "2.5.4"
+val asciidoctorjVersion = "2.5.5"
 val jsoupVersion = "1.15.1"
 
 dependencies {
