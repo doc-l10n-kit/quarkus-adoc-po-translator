@@ -17,6 +17,7 @@ val deepl4jVersion = "0.1.2.RELEASE"
 val jgettextVersion = "0.15.1"
 val asciidoctorjVersion = "2.5.3"
 val jsoupVersion = "1.14.3"
+val deeplJavaVersion = "0.2.0"
 
 dependencies {
     implementation(platform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:2.8.2.Final"))
@@ -28,9 +29,8 @@ dependencies {
     implementation("io.quarkus:quarkus-arc")
     implementation("io.quarkus:quarkus-resteasy")
 
-    implementation("com.github.sharplab:deepl4j:${deepl4jVersion}"){
-        exclude("jakarta.annotation", "jakarta.annotation-api")
-    }
+    implementation("com.deepl.api:deepl-java:${deeplJavaVersion}")
+
     implementation("org.fedorahosted.tennera:jgettext:${jgettextVersion}")
     implementation("org.asciidoctor:asciidoctorj:${asciidoctorjVersion}")
     implementation("org.jsoup:jsoup:${jsoupVersion}")
