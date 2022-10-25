@@ -1,5 +1,7 @@
 # quarkus-adoc-po-translator
 
+*moved to https://github.com/doc-l10n-kit/doc-l10n-kit*
+
 [![Actions Status](https://github.com/i18n-quarkusio/quarkus-adoc-po-translator/workflows/CI/badge.svg)](https://github.com/i18n-quarkusio/quarkus-adoc-po-translator/actions)
 
 quarkus-adoc-po-translator is an utility to translate .adoc.po files extracted from quarkus documentations asciidoctor files by po4a.
