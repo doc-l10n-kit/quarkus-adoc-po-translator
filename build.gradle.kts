@@ -1,7 +1,7 @@
 plugins {
     kotlin("jvm") version "1.6.21"
     kotlin("plugin.allopen") version "1.6.21"
-    id("io.quarkus") version "2.9.0.Final"
+    id("io.quarkus") version "2.9.2.Final"
 }
 
 repositories {
@@ -15,8 +15,8 @@ val quarkusPlatformArtifactId: String by project
 val quarkusAdocPoTranslatorVersion: String by project
 val deepl4jVersion = "0.1.2.RELEASE"
 val jgettextVersion = "0.15.1"
-val asciidoctorjVersion = "2.5.3"
-val jsoupVersion = "1.14.3"
+val asciidoctorjVersion = "2.5.4"
+val jsoupVersion = "1.15.1"
 val deeplJavaVersion = "0.2.0"
 
 dependencies {
@@ -38,7 +38,7 @@ dependencies {
 
     testImplementation("io.quarkus:quarkus-junit5")
     testImplementation("org.mockito:mockito-junit-jupiter")
-    testImplementation("org.assertj:assertj-core:3.22.0")
+    testImplementation("org.assertj:assertj-core:3.23.1")
 }
 
 group = "net.sharplab.translator"
